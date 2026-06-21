@@ -1,0 +1,104 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rad-ai-sentinel"
+version = "0.1.0"
+description = "Open-source framework for site-, scanner-, subgroup- and time-stratified surveillance of radiology AI performance."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "rad-ai-sentinel contributors" }]
+keywords = [
+    "radiology",
+    "artificial-intelligence",
+    "model-monitoring",
+    "drift-detection",
+    "clinical-ai",
+    "fairness",
+    "calibration",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "scikit-learn>=1.4",
+    "scipy>=1.11",
+    "pandera>=0.20",
+    "plotly>=5.20",
+    "matplotlib>=3.8",
+    "typer>=0.12",
+    "rich>=13.7",
+    "jinja2>=3.1",
+    "weasyprint>=60",
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+app = ["streamlit>=1.36"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pandas-stubs",
+    "types-Jinja2",
+    "streamlit>=1.36",
+]
+
+[project.scripts]
+rad-ai-sentinel = "rad_ai_sentinel.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/rad-ai-sentinel/rad-ai-sentinel"
+Documentation = "https://github.com/rad-ai-sentinel/rad-ai-sentinel#readme"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"rad_ai_sentinel.report" = ["templates/*.html", "templates/*.css"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]  # assert statements are fine in tests
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["pandera.*", "sklearn.*", "plotly.*", "weasyprint.*", "streamlit.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning",
+]
