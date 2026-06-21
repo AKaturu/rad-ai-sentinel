@@ -42,6 +42,7 @@ def compute_calibration(
     y_score: np.ndarray,
     *,
     n_bins: int = DEFAULT_CALIBRATION_BINS,
+    n_resamples: int = 500,
     strategy: str = "uniform",
 ) -> CalibrationMetrics:
     """Compute calibration metrics and reliability-diagram data.
@@ -52,6 +53,8 @@ def compute_calibration(
         Arrays of ground-truth labels and predicted probabilities.
     n_bins:
         Number of bins for the reliability diagram and ECE calculation.
+    n_resamples:
+        Bootstrap resamples for the Brier-score confidence interval.
     strategy:
         Binning strategy passed to sklearn's ``calibration_curve``; one of
         ``"uniform"`` (equal-width) or ``"quantile"`` (equal-count).
@@ -66,7 +69,7 @@ def compute_calibration(
 
     # --- Brier score with bootstrap CI ---
     paired = np.column_stack([y_true, y_score])
-    brier_ci = bootstrap_ci(paired, _brier_of, n_resamples=500, paired=True)
+    brier_ci = bootstrap_ci(paired, _brier_of, n_resamples=n_resamples, paired=True)
 
     # --- Bin assignments ---
     bin_edges = np.linspace(0.0, 1.0, n_bins + 1)

@@ -87,6 +87,8 @@ class AlertThresholds:
     min_specificity: float = 0.80
     # PSI value at/above which drift is considered 'major' (triggers an alert).
     psi_major: float = DEFAULT_DRIFT_PSI_MAJOR
+    # PSI value at/above which drift is considered 'minor' (a warning).
+    psi_minor: float = DEFAULT_DRIFT_PSI_MINOR
     # Subgroup disparity: max allowed absolute gap in sensitivity between
     # any two subgroups within a stratifier.
     max_subgroup_sens_gap: float = 0.05

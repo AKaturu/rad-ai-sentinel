@@ -1,82 +1,121 @@
 # rad-ai-sentinel
 
-**An open-source framework for site-, scanner-, subgroup- and time-stratified surveillance of radiology AI performance.**
+**An open-source framework for site-, scanner-, subgroup-, version-, and time-stratified surveillance of radiology AI performance.**
 
-`rad-ai-sentinel` operationalizes the post-deployment monitoring that the
-**[ACR-SIIM Practice Parameter for Imaging AI](https://www.acr.org/News-and-Publications/Media-Center/2026/first-practice-parameter-for-imaging-ai)**
-(approved by the ACR Council, May 2026) now requires of imaging facilities:
-monitoring real-world model performance for **drift** and safety issues, defining
-**stop rules**, and keeping an inventory of AI tools including their **versions**.
+`rad-ai-sentinel` operationalizes post-deployment monitoring for existing imaging AI model outputs. It does **not** train an imaging model. Bring a CSV of predictions, ground truth, and study metadata; the tool validates the file, computes performance and drift metrics, surfaces stop-rule alerts, and generates a downloadable monitoring report.
 
-You do **not** train an imaging model. You give `rad-ai-sentinel` the predictions
-an existing AI model already made, alongside the ground truth and study metadata,
-and it produces a complete surveillance report.
+The project is motivated by the ACR-SIIM Practice Parameter for Imaging AI, approved by the ACR Council on May 5, 2026, which emphasizes AI inventory/version tracking, local acceptance testing, ongoing performance monitoring, drift/safety evaluation, stop rules, and privacy controls.
 
----
+## Demo
 
-## What it does
+![rad-ai-sentinel demo walkthrough](screenshots/demo.gif)
 
-Upload a CSV containing a model's predictions and ground truth plus study
-metadata, and `rad-ai-sentinel` produces:
+## Screenshots
 
-- **Discrimination**: sensitivity, specificity, PPV, NPV (with Wilson confidence
-  intervals), AUROC and AUPRC (with bootstrap CIs).
-- **Calibration**: Brier score, Expected Calibration Error (ECE), and a
-  reliability diagram.
-- **Subgroup performance**: stratified by age group, sex, race/ethnicity.
-- **Scanner- and site-specific performance**: stratified by site, scanner
-  manufacturer, and modality.
-- **Missing-data analysis**: missingness rates and per-subgroup impact.
-- **Temporal drift detection**: Population Stability Index (PSI), KL divergence,
-  rolling AUROC, and a CUSUM signal.
-- **Threshold / stop-rule alerts**: configurable breaches that fire ACR-style
-  stop rules.
-- **Model-version comparison**: metric deltas with DeLong testing on AUROC.
-- **A downloadable AI monitoring report** in both HTML and PDF.
+![Dashboard overview](screenshots/dashboard-overview.png)
 
-## Quick start
+![Subgroup performance](screenshots/dashboard-subgroups.png)
+
+![Report downloads](screenshots/dashboard-report.png)
+
+![Mobile dashboard](screenshots/dashboard-mobile.png)
+
+## What It Produces
+
+- Sensitivity, specificity, PPV, NPV, accuracy, F1, prevalence, AUROC, and AUPRC.
+- Wilson confidence intervals for 2x2 metrics and bootstrap CIs for curve/calibration metrics.
+- Calibration analysis with Brier score, expected calibration error, and reliability curves.
+- Subgroup performance by age group, sex, race/ethnicity, site, scanner manufacturer, and modality.
+- Scanner- and site-specific performance tables.
+- Missing-data analysis, including subgroup availability and outcome-associated missingness flags.
+- Temporal drift detection with PSI, KL divergence, rolling AUROC, and CUSUM.
+- Configurable stop-rule alerts.
+- Model-version comparisons, including DeLong AUROC comparison when versions share a common case set.
+- Machine-readable CSV/JSON outputs.
+- Downloadable HTML report, with optional PDF export when WeasyPrint system libraries are installed.
+
+## Quick Start
 
 ```bash
-# install (development)
 pip install -e ".[dev]"
 
-# run the demo (generates synthetic data with planted issues + a full report)
+# Generate synthetic monitoring data, metrics, and an HTML report.
 rad-ai-sentinel demo
 
-# compute metrics from your own CSV
-rad-ai-sentinel compute --csv path/to/predictions.csv --output reports/
+# Analyze your own monitoring CSV.
+rad-ai-sentinel compute --csv path/to/predictions.csv --output outputs/analysis
 
-# generate a PDF + HTML report
-rad-ai-sentinel report --csv path/to/predictions.csv --output reports/
+# Generate a report.
+rad-ai-sentinel report --csv path/to/predictions.csv --output outputs/report
 
-# launch the web dashboard
+# Launch the dashboard.
 rad-ai-sentinel serve
 ```
 
-Then open http://localhost:8501.
+Then open [http://localhost:8501](http://localhost:8501).
 
-## CSV format
+## Docker
+
+```bash
+docker build -t rad-ai-sentinel .
+docker run --rm -p 8501:8501 rad-ai-sentinel
+```
+
+## CSV Format
 
 | column | type | required | description |
-|---|---|---|---|
+|---|---:|:---:|---|
 | `patient_id` | string | yes | de-identified patient identifier |
-| `study_date` | date | yes | examination date (YYYY-MM-DD) |
-| `site` | string | no | reading site / facility |
-| `scanner_manufacturer` | string | no | e.g. GE, Siemens, Philips |
-| `modality` | string | no | e.g. CR, DX, CT, MR |
-| `age_group` | string | no | e.g. 0-17, 18-39, 40-64, 65+ |
-| `sex` | string | no | e.g. F, M |
-| `race_ethnicity` | string | no | self-reported, where available |
-| `model_version` | string | yes | e.g. v2.0, v2.1 |
-| `y_true` | int (0/1) | yes | ground-truth label |
-| `y_pred_proba` | float [0,1] | yes | model probability for class 1 |
-| `y_pred_binary` | int (0/1) | yes | thresholded model prediction |
+| `study_date` | date | yes | examination date, `YYYY-MM-DD` |
+| `site` | string | no | site, facility, or reader group |
+| `scanner_manufacturer` | string | no | scanner manufacturer |
+| `modality` | string | no | modality such as `DX`, `CR`, `CT`, `MR` |
+| `age_group` | string | no | age band such as `18-39`, `40-64`, `65+` |
+| `sex` | string | no | sex where available and appropriate |
+| `race_ethnicity` | string | no | race/ethnicity where available and appropriate |
+| `model_version` | string | yes | model version label |
+| `y_true` | int | yes | ground-truth label, 0 or 1 |
+| `y_pred_proba` | float | yes | model probability for class 1, from 0 to 1 |
+| `y_pred_binary` | int | yes | thresholded prediction, 0 or 1 |
 
-Optional metadata columns may be missing; `rad-ai-sentinel` reports and accounts
-for missingness. See [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md) for how to
-connect real datasets (MIMIC-CXR, CheXpert, NIH ChestX-ray14) once you have DUA
-access.
+Optional metadata columns may be absent or partially missing. Missingness is reported rather than silently ignored.
+
+## Public Data Smoke Test
+
+Public radiology datasets usually include images, labels, and metadata, but not deployed AI outputs. For a public smoke test, use the RSNA Pneumonia Detection Challenge labels and add either your own model predictions or deterministic synthetic scores for pipeline validation:
+
+```bash
+rad-ai-sentinel adapt-rsna stage_2_train_labels.csv outputs/rsna_monitoring.csv
+rad-ai-sentinel report --csv outputs/rsna_monitoring.csv --output outputs/rsna_report
+```
+
+With model predictions:
+
+```bash
+rad-ai-sentinel adapt-rsna stage_2_train_labels.csv outputs/rsna_monitoring.csv \
+  --predictions-csv my_model_predictions.csv \
+  --metadata-csv dicom_metadata_extract.csv \
+  --model-version pneumonia-model-v1
+```
+
+See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for RSNA/NIH, MIMIC-CXR, NIH ChestX-ray, and CheXpert notes.
+
+## Development
+
+```bash
+python -m ruff check .
+python -m pytest
+```
+
+Current local verification:
+
+- `python -m ruff check .`
+- `python -m pytest` -> 61 passed
+
+## Safety Note
+
+This project is for monitoring and research workflows. It is not a medical device, does not certify clinical performance, and should not be used to make patient-care decisions without appropriate institutional review, validation, governance, privacy controls, and clinical oversight.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

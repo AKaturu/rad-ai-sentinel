@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>rad-ai-sentinel Monitoring Report</title>
+  <style>{{ css }}</style>
+</head>
+<body>
+  <main class="report">
+    <header>
+      <p class="eyebrow">Radiology AI Performance Monitor</p>
+      <h1>rad-ai-sentinel Monitoring Report</h1>
+      <p class="dek">{{ start_date }} to {{ end_date }} | {{ n }} studies | {{ n_positive }} positive | prevalence {{ prevalence }}</p>
+    </header>
+
+    <section class="status">
+      <div>
+        <span class="label">Alerts</span>
+        <strong>{{ alert_count }}</strong>
+        <span>{{ critical_alerts }} critical, {{ warning_alerts }} warning</span>
+      </div>
+      <div>
+        <span class="label">AUROC</span>
+        <strong>{{ "%.3f"|format(summary.auroc) }}</strong>
+        <span>overall discrimination</span>
+      </div>
+      <div>
+        <span class="label">PSI</span>
+        <strong>{{ "%.3f"|format(summary.psi) }}</strong>
+        <span>{{ summary.psi_level }} drift</span>
+      </div>
+      <div>
+        <span class="label">Sensitivity</span>
+        <strong>{{ "%.3f"|format(summary.sensitivity) }}</strong>
+        <span>current threshold</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Stop-Rule Alerts</h2>
+      {{ alerts_table | safe }}
+    </section>
+
+    <section>
+      <h2>Executive Metrics</h2>
+      {{ summary_table | safe }}
+    </section>
+
+    <section class="plots two-col">
+      <figure>
+        <img src="{{ roc_plot }}" alt="ROC curve">
+      </figure>
+      <figure>
+        <img src="{{ pr_plot }}" alt="Precision-recall curve">
+      </figure>
+      <figure>
+        <img src="{{ calibration_plot }}" alt="Calibration curve">
+      </figure>
+      <figure>
+        <img src="{{ rolling_plot }}" alt="Rolling AUROC over time">
+      </figure>
+    </section>
+
+    <section>
+      <h2>Temporal Drift</h2>
+      {{ drift_table | safe }}
+    </section>
+
+    <section>
+      <h2>Subgroup, Scanner, and Site Performance</h2>
+      {{ stratified_table | safe }}
+    </section>
+
+    <section>
+      <h2>Missing-Data Analysis</h2>
+      {{ missing_table | safe }}
+    </section>
+
+    <section>
+      <h2>Model-Version Comparison</h2>
+      {{ versions_table | safe }}
+    </section>
+
+    <footer>
+      <p>This report monitors an existing model's outputs. It is not intended to train, validate, or certify an imaging AI model for clinical use.</p>
+    </footer>
+  </main>
+</body>
+</html>

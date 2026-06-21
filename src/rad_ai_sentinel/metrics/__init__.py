@@ -59,6 +59,7 @@ def compute_all_metrics(
     *,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
     stratifiers: list[str] | None = None,
+    n_resamples: int = 300,
 ) -> FullMetricsResult:
     """Run the full metric suite on a validated dataframe.
 
@@ -70,6 +71,8 @@ def compute_all_metrics(
         Confidence level for all CIs.
     stratifiers:
         Stratifier columns to analyse; defaults to all available stratifiers.
+    n_resamples:
+        Bootstrap resamples for AUROC, AUPRC, and Brier confidence intervals.
 
     Returns
     -------
@@ -84,9 +87,9 @@ def compute_all_metrics(
 
     # Overall metrics.
     binary = compute_binary_metrics(y_true, y_pred, confidence=confidence)
-    roc = compute_roc(y_true, y_proba, confidence=confidence, n_resamples=500)
-    pr = compute_pr(y_true, y_proba, confidence=confidence, n_resamples=500)
-    calibration = compute_calibration(y_true, y_proba, n_bins=10)
+    roc = compute_roc(y_true, y_proba, confidence=confidence, n_resamples=n_resamples)
+    pr = compute_pr(y_true, y_proba, confidence=confidence, n_resamples=n_resamples)
+    calibration = compute_calibration(y_true, y_proba, n_bins=10, n_resamples=n_resamples)
 
     # Stratified metrics (only for columns present in df).
     stratified = stratify_all(df, stratifiers=stratifiers, confidence=confidence)
