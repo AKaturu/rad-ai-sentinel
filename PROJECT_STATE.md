@@ -9,7 +9,7 @@ rad-ai-sentinel
 Build a runnable radiology AI performance monitoring framework that accepts existing model prediction CSVs, computes clinical AI surveillance metrics, detects drift and stop-rule breaches, stratifies by site/scanner/subgroup/version, and produces CLI, dashboard, and report outputs.
 
 ### Current Status
-Phase 8 (Session Handoff) - MVP complete, tested, documented, and ready for GitHub review.
+Phase 9 - MVP complete with cross-platform PDF export, tested, documented, and ready for GitHub review.
 
 ---
 
@@ -65,7 +65,7 @@ No blocking work remains for the requested MVP.
 ## Next Actions
 
 1. Review README screenshots and wording on GitHub after pushing.
-2. If PDF export is required on Windows, install WeasyPrint native dependencies locally or use the Docker image.
+2. PDF export now works on all platforms: WeasyPrint (Linux/Docker/CI with GTK) or fpdf2 fallback (Windows, no native deps). Run `rad-ai-sentinel demo` and both `.html` and `.pdf` are produced.
 3. For a publication abstract, run `adapt-rsna` with RSNA labels plus predictions from a fixed external model, or use credentialed MIMIC-CXR/institutional predictions.
 
 ---
@@ -76,7 +76,7 @@ No blocking work remains for the requested MVP.
 None blocking.
 
 ### Known Issues
-Local Windows PDF export skipped because WeasyPrint could not import native libraries. HTML report generation works; Docker/CI install the Linux libraries needed for PDF export.
+None. Previously, Windows PDF export was broken because WeasyPrint requires GTK3 native libraries. This is now resolved with a dual-engine PDF strategy: WeasyPrint is tried first (for full CSS layout on Linux/Docker/CI), and fpdf2 (pure Python, no native deps) serves as an automatic fallback that produces a styled PDF with all metrics tables, plots, and KPI boxes.
 
 ### Technical Concerns
 Public radiology datasets generally do not include deployed model outputs, so public smoke tests need either real model predictions or clearly labeled synthetic scores. Subgroup findings should be interpreted with sample-size and missingness context.
@@ -92,7 +92,7 @@ Verify with:
 ```bash
 python -m ruff check .
 python -m pytest
-rad-ai-sentinel demo --output outputs/demo --no-pdf
+rad-ai-sentinel demo --output outputs/demo --n 1200 --seed 42
 rad-ai-sentinel serve
 ```
 

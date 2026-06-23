@@ -40,6 +40,7 @@ dependencies = [
     "rich>=13.7",
     "jinja2>=3.1",
     "weasyprint>=60",
+    "fpdf2>=2.7",
     "pydantic>=2.6",
 ]
 
