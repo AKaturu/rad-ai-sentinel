@@ -87,8 +87,12 @@ SOP_CT_IMAGE = "1.2.840.10008.5.1.4.1.1.2"  # CT Image Storage
 SOP_CT_RDSR = "1.2.840.10008.5.1.4.1.1.88.70"  # Enhanced SR / CT Radiation Dose SR container
 
 # DICOM tag numbers (group, element) for CT image header dose fields.
-TAG_CTDI_VOL = (0x0018, 0x9345)  # CTDIvol
-TAG_DLP = (0x0018, 0x9934)  # DLP appears in some CT image/enhanced objects
+# NOTE: CTDIvol has a standard image-header tag; DLP does NOT. DLP is reliably
+# available only inside the CT Radiation Dose SR (RDSR) content tree (DCM code
+# 113814), or it must be reconstructed as CTDIvol x scan length. Image-only
+# studies therefore commonly have a missing DLP — a core use case for the
+# audit's missing-dose detection.
+TAG_CTDI_VOL = (0x0018, 0x9345)  # CTDIvol (standard CT image header tag)
 TAG_KVP = (0x0018, 0x0060)
 TAG_TUBE_CURRENT = (0x0018, 0x1150)
 TAG_PROTOCOL_NAME = (0x0018, 0x1030)

@@ -31,9 +31,9 @@ from .config import (
     COL_SCANNER_MODEL,
     COL_SITE,
     COL_SIZE_CATEGORY,
+    COL_SOURCE,
     COL_STUDY_DATE,
     COL_STUDY_UID,
-    COL_SOURCE,
     COL_TUBE_CURRENT,
 )
 
