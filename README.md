@@ -10,6 +10,12 @@ The project is motivated by the ACR-SIIM Practice Parameter for Imaging AI, appr
 
 ![rad-ai-sentinel demo walkthrough](screenshots/demo.gif)
 
+PDF export walkthrough:
+
+<video src="screenshots/demo-pdf-export.webm" controls width="100%"></video>
+
+Direct video link: [screenshots/demo-pdf-export.webm](screenshots/demo-pdf-export.webm)
+
 ## Screenshots
 
 ![Dashboard overview](screenshots/dashboard-overview.png)
