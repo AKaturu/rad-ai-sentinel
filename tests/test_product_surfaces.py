@@ -11,7 +11,11 @@ from typer.testing import CliRunner
 
 from rad_ai_sentinel.analysis import run_monitoring_analysis, write_analysis_outputs
 from rad_ai_sentinel.cli import app
-from rad_ai_sentinel.data import adapt_rsna_pneumonia_labels, generate_synthetic_monitoring_data
+from rad_ai_sentinel.data import (
+    adapt_rsna_pneumonia_labels,
+    generate_synthetic_monitoring_data,
+    write_rsna_case_study_template,
+)
 from rad_ai_sentinel.report import generate_monitoring_report, render_report_html
 from rad_ai_sentinel.schemas import validate_dataframe
 
@@ -84,3 +88,26 @@ def test_cli_adapt_rsna() -> None:
     result = CliRunner().invoke(app, ["adapt-rsna", str(labels_path), str(output_path)])
     assert result.exit_code == 0, result.output
     assert output_path.exists()
+
+
+def test_rsna_case_study_template_scaffold() -> None:
+    output_dir = _case_dir("rsna_case_study_template")
+    files = write_rsna_case_study_template(output_dir)
+
+    assert files["readme"].exists()
+    assert files["analysis_plan"].exists()
+    predictions = pd.read_csv(files["predictions"])
+    metadata = pd.read_csv(files["metadata"])
+    assert list(predictions.columns) == ["patientId", "prediction"]
+    assert {"patientId", "StudyDate", "PatientSex", "PatientAge"}.issubset(metadata.columns)
+    assert "not a clinical validation template" in files["readme"].read_text(encoding="utf-8")
+
+
+def test_cli_rsna_case_study_template_refuses_overwrite() -> None:
+    output_dir = _case_dir("cli_rsna_case_study_template")
+    result = CliRunner().invoke(app, ["rsna-case-study-template", str(output_dir)])
+    assert result.exit_code == 0, result.output
+
+    second = CliRunner().invoke(app, ["rsna-case-study-template", str(output_dir)])
+    assert second.exit_code != 0
+    assert "Refusing to overwrite" in second.output

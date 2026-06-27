@@ -128,6 +128,15 @@ rad-ai-sentinel adapt-rsna stage_2_train_labels.csv outputs/rsna_monitoring.csv 
 ```
 
 See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for RSNA/NIH, MIMIC-CXR, NIH ChestX-ray, and CheXpert notes.
+For a reusable RSNA external-prediction case-study scaffold:
+
+```bash
+rad-ai-sentinel rsna-case-study-template docs/case_studies/rsna_external_predictions
+```
+
+The scaffold includes prediction and metadata CSV templates, a short analysis
+plan, and language that keeps software demonstration separate from clinical
+validation claims.
 
 ## Development
 

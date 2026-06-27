@@ -18,7 +18,7 @@ from .analysis import (
     summary_metrics_frame,
     write_analysis_outputs,
 )
-from .data import adapt_rsna_pneumonia_labels, write_synthetic_csv
+from .data import adapt_rsna_pneumonia_labels, write_rsna_case_study_template, write_synthetic_csv
 from .report import generate_monitoring_report
 
 app = typer.Typer(
@@ -143,6 +143,27 @@ def adapt_rsna_command(
         model_version=model_version,
     )
     console.print(f"[green]Wrote monitoring CSV:[/green] {output_csv} ({len(df)} rows)")
+
+
+@app.command("rsna-case-study-template")
+def rsna_case_study_template_command(
+    output: Annotated[
+        Path,
+        typer.Argument(help="Destination directory for the RSNA case-study scaffold."),
+    ],
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Overwrite existing scaffold files."),
+    ] = False,
+) -> None:
+    """Write a safe RSNA external-prediction case-study scaffold."""
+    try:
+        files = write_rsna_case_study_template(output, force=force)
+    except FileExistsError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"[green]Wrote RSNA case-study template:[/green] {output}")
+    for name, path in files.items():
+        console.print(f"  {name}: {path}")
 
 
 def _print_summary_table(df: pd.DataFrame) -> None:

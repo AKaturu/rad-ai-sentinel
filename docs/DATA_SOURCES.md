@@ -32,6 +32,15 @@ Expected prediction CSV columns:
 - `patientId` or `patient_id`
 - `prediction` or `y_pred_proba`
 
+Create a reusable case-study scaffold:
+
+```bash
+rad-ai-sentinel rsna-case-study-template docs/case_studies/rsna_external_predictions
+```
+
+The scaffold writes prediction/metadata CSV templates, an analysis plan, and
+claim-boundary language for public software demonstrations.
+
 ## MIMIC-CXR
 
 Recommended for richer institutional-style research after credentialing.

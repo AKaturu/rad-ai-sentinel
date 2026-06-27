@@ -5,7 +5,7 @@ This roadmap tracks planned work after the initial public MVP. Items are grouped
 ## Near Term
 
 - Publish cross-platform desktop downloads for Windows, macOS, and Linux through GitHub Actions release artifacts.
-- Add a short public case-study template that shows how to pair RSNA labels with externally generated model predictions without implying clinical validity.
+- Add a short public case-study template that shows how to pair RSNA labels with externally generated model predictions without implying clinical validity. (Implemented: `rsna-case-study-template` and `docs/case_studies/rsna_external_predictions.md`.)
 - Expand dashboard export options for CSV, JSON, HTML, and PDF artifacts from the same reviewed analysis run.
 - Add regression fixtures for malformed monitoring CSVs, missing subgroup fields, and small-sample subgroup behavior.
 
