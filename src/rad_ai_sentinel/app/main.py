@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import tempfile
 
 import pandas as pd
 import streamlit as st
@@ -18,6 +19,7 @@ from rad_ai_sentinel.analysis import (
 )
 from rad_ai_sentinel.config import AlertThresholds
 from rad_ai_sentinel.data import generate_synthetic_monitoring_data
+from rad_ai_sentinel.exports import build_monitoring_export_payloads
 from rad_ai_sentinel.plots import (
     calibration_figure,
     pr_figure,
@@ -26,7 +28,7 @@ from rad_ai_sentinel.plots import (
     score_distribution_figure,
     subgroup_metric_figure,
 )
-from rad_ai_sentinel.report import render_report_html
+from rad_ai_sentinel.report import generate_monitoring_report
 
 st.set_page_config(page_title="rad-ai-sentinel", layout="wide")
 
@@ -136,16 +138,37 @@ with versions:
     st.dataframe(version_comparison_frame(analysis), width="stretch", hide_index=True)
 
 with report:
-    html = render_report_html(analysis)
-    st.download_button(
-        "Download HTML Report",
-        html,
-        file_name="rad_ai_sentinel_report.html",
-        mime="text/html",
-    )
-    st.download_button(
-        "Download Analyzed CSV",
-        analysis.dataframe.to_csv(index=False),
-        file_name="validated_monitoring_data.csv",
-        mime="text/csv",
-    )
+    exports = build_monitoring_export_payloads(analysis)
+    buttons = [
+        ("Download HTML Report", "report_html"),
+        ("Download Metrics JSON", "metrics_json"),
+        ("Download Validated CSV", "validated_csv"),
+        ("Download Summary CSV", "summary_csv"),
+        ("Download Stratified CSV", "stratified_csv"),
+        ("Download Missing CSV", "missing_csv"),
+        ("Download Alerts CSV", "alerts_csv"),
+        ("Download Drift CSV", "drift_csv"),
+        ("Download Versions CSV", "versions_csv"),
+    ]
+    for start in range(0, len(buttons), 3):
+        for col, (label, key) in zip(st.columns(3), buttons[start : start + 3], strict=True):
+            payload = exports[key]
+            col.download_button(
+                label,
+                payload.data,
+                file_name=payload.file_name,
+                mime=payload.mime,
+            )
+
+    if st.checkbox("Prepare PDF Report"):
+        with tempfile.TemporaryDirectory() as tmp:
+            artifacts = generate_monitoring_report(analysis, tmp, include_pdf=True)
+            if artifacts.pdf:
+                st.download_button(
+                    "Download PDF Report",
+                    artifacts.pdf.read_bytes(),
+                    file_name=artifacts.pdf.name,
+                    mime="application/pdf",
+                )
+            elif artifacts.pdf_error:
+                st.warning(artifacts.pdf_error.read_text(encoding="utf-8"))

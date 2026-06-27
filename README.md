@@ -55,7 +55,7 @@ Direct video link: [screenshots/demo-pdf-export.webm](screenshots/demo-pdf-expor
 - Configurable stop-rule alerts.
 - Model-version comparisons, including DeLong AUROC comparison when versions share a common case set.
 - Machine-readable CSV/JSON outputs.
-- Downloadable HTML report, with optional PDF export when WeasyPrint system libraries are installed.
+- Downloadable CSV, JSON, HTML, and optional PDF exports from one monitored analysis run.
 
 ## Quick Start
 

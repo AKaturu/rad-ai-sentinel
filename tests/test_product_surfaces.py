@@ -16,6 +16,7 @@ from rad_ai_sentinel.data import (
     generate_synthetic_monitoring_data,
     write_rsna_case_study_template,
 )
+from rad_ai_sentinel.exports import build_monitoring_export_payloads
 from rad_ai_sentinel.report import generate_monitoring_report, render_report_html
 from rad_ai_sentinel.schemas import validate_dataframe
 
@@ -55,6 +56,30 @@ def test_html_report_renders() -> None:
     artifacts = generate_monitoring_report(analysis, output_dir, include_pdf=False)
     assert artifacts.html.exists()
     assert artifacts.pdf is None
+
+
+def test_monitoring_export_payloads_share_one_analysis() -> None:
+    df = generate_synthetic_monitoring_data(n=180, seed=17, include_version_holdout=False)
+    analysis = run_monitoring_analysis(df, n_resamples=30)
+    payloads = build_monitoring_export_payloads(analysis)
+
+    expected = {
+        "validated_csv",
+        "summary_csv",
+        "stratified_csv",
+        "missing_csv",
+        "alerts_csv",
+        "drift_csv",
+        "versions_csv",
+        "metrics_json",
+        "report_html",
+    }
+    assert expected == set(payloads)
+
+    metrics = json.loads(payloads["metrics_json"].data)
+    assert metrics["n"] == len(df)
+    assert "rad-ai-sentinel Monitoring Report" in payloads["report_html"].data
+    assert "model_version" in payloads["validated_csv"].data
 
 
 def test_rsna_adapter_creates_monitoring_csv() -> None:
