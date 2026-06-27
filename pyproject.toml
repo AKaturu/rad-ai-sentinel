@@ -46,6 +46,7 @@ dependencies = [
 
 [project.optional-dependencies]
 app = ["streamlit>=1.36"]
+packaging = ["pyinstaller>=6.0"]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.1",

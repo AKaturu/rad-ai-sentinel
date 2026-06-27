@@ -1,0 +1,93 @@
+name: Native desktop release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            artifact: rad-ai-sentinel-windows
+          - platform: linux
+            os: ubuntu-latest
+            artifact: rad-ai-sentinel-linux
+          - platform: macos
+            os: macos-13
+            artifact: rad-ai-sentinel-macos
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Linux PDF libraries
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libgdk-pixbuf-2.0-0 shared-mime-info
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[app,packaging]"
+
+      - name: Build desktop app
+        run: python scripts/build_native.py
+
+      - name: Smoke test desktop launcher
+        shell: bash
+        run: |
+          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+            ./dist/native/RadAISentinel/RadAISentinel.exe --self-check
+          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
+            ./dist/native/RadAISentinel.app/Contents/MacOS/RadAISentinel --self-check
+          else
+            ./dist/native/RadAISentinel/RadAISentinel --self-check
+          fi
+
+      - name: Package Windows artifact
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/native/RadAISentinel -DestinationPath dist/${{ matrix.artifact }}.zip
+
+      - name: Package Linux artifact
+        if: matrix.platform == 'linux'
+        run: tar -czf dist/${{ matrix.artifact }}.tar.gz -C dist/native RadAISentinel
+
+      - name: Package macOS artifact
+        if: matrix.platform == 'macos'
+        run: hdiutil create -volname RadAISentinel -srcfolder dist/native/RadAISentinel.app -ov -format UDZO dist/${{ matrix.artifact }}.dmg
+
+      - name: Upload Windows artifact
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.zip
+
+      - name: Upload Linux artifact
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.tar.gz
+
+      - name: Upload macOS artifact
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.dmg

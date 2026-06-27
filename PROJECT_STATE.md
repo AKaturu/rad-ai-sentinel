@@ -9,7 +9,7 @@ rad-ai-sentinel
 Build a runnable radiology AI performance monitoring framework that accepts existing model prediction CSVs, computes clinical AI surveillance metrics, detects drift and stop-rule breaches, stratifies by site/scanner/subgroup/version, and produces CLI, dashboard, and report outputs.
 
 ### Current Status
-Phase 10 - MVP complete with cross-platform PDF export, tested, documented, and polished for public GitHub review.
+Phase 11 - MVP complete with cross-platform PDF export, desktop release packaging, tested documentation, and public GitHub polish.
 
 ---
 
@@ -47,6 +47,14 @@ Streamlit launched locally at `http://localhost:8501`. Browser automation verifi
 #### Tests Added
 Manual/browser validation plus screenshots in `screenshots/`.
 
+### Feature: Native Desktop Release Packaging
+
+#### Validation
+Added a PyInstaller desktop launcher, local build script, release documentation, and GitHub Actions workflow for Windows ZIP, macOS DMG, and Linux tar.gz artifacts.
+
+#### Tests Added
+Release workflow includes packaged launcher `--self-check` smoke tests.
+
 ---
 
 ## Current Work
@@ -55,7 +63,7 @@ Manual/browser validation plus screenshots in `screenshots/`.
 None.
 
 ### Progress
-All requested MVP surfaces are implemented: Python package, CLI, Streamlit dashboard, synthetic data, public-data adapter, report generation, Dockerfile, GitHub Actions, screenshots, and demo GIF.
+All requested MVP surfaces are implemented: Python package, CLI, Streamlit dashboard, synthetic data, public-data adapter, report generation, Dockerfile, GitHub Actions, screenshots, demo GIF, roadmap, and native desktop release workflow.
 
 GitHub presentation polish is complete: README badges and repository guide were added, contribution/security documents were added, and package/license metadata now points to `AKaturu/rad-ai-sentinel`.
 
@@ -67,8 +75,9 @@ No blocking work remains for the requested MVP.
 ## Next Actions
 
 1. Review README screenshots and wording on GitHub after pushing.
-2. PDF export now works on all platforms: WeasyPrint (Linux/Docker/CI with GTK) or fpdf2 fallback (Windows, no native deps). Run `rad-ai-sentinel demo` and both `.html` and `.pdf` are produced.
-3. For a publication abstract, run `adapt-rsna` with RSNA labels plus predictions from a fixed external model, or use credentialed MIMIC-CXR/institutional predictions.
+2. Cut a version tag such as `v0.1.0` to trigger the native desktop release workflow and attach artifacts to a GitHub Release.
+3. PDF export now works on all platforms: WeasyPrint (Linux/Docker/CI with GTK) or fpdf2 fallback (Windows, no native deps). Run `rad-ai-sentinel demo` and both `.html` and `.pdf` are produced.
+4. For a publication abstract, run `adapt-rsna` with RSNA labels plus predictions from a fixed external model, or use credentialed MIMIC-CXR/institutional predictions.
 
 ---
 
@@ -98,4 +107,4 @@ rad-ai-sentinel demo --output outputs/demo --n 1200 --seed 42
 rad-ai-sentinel serve
 ```
 
-The single next concrete step, if continuing beyond this MVP, is to connect a real external model prediction CSV to the RSNA adapter and add a short case study under `docs/`.
+The single next concrete step, if continuing beyond this MVP, is to connect a real external model prediction CSV to the RSNA adapter and add a short case study under `docs/`. Roadmap details are in `docs/ROADMAP.md`.

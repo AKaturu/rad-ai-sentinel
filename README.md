@@ -84,6 +84,12 @@ docker build -t rad-ai-sentinel .
 docker run --rm -p 8501:8501 rad-ai-sentinel
 ```
 
+## Desktop Downloads
+
+Tagged releases can provide native desktop artifacts for Windows, macOS, and Linux. These launch the dashboard locally in your browser and do not require API keys.
+
+See [docs/DESKTOP_RELEASES.md](docs/DESKTOP_RELEASES.md) for build and release details.
+
 ## CSV Format
 
 | column | type | required | description |
@@ -148,6 +154,8 @@ GitHub Actions runs linting and tests on Python 3.12.
 - [Requirements](docs/REQUIREMENTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Data Sources](docs/DATA_SOURCES.md)
+- [Desktop Releases](docs/DESKTOP_RELEASES.md)
+- [Roadmap](docs/ROADMAP.md)
 - [Research Notes](docs/RESEARCH.md)
 
 ## Contributing
