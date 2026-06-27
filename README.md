@@ -1,10 +1,27 @@
 # rad-ai-sentinel
 
+[![CI](https://github.com/AKaturu/rad-ai-sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/AKaturu/rad-ai-sentinel/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **An open-source framework for site-, scanner-, subgroup-, version-, and time-stratified surveillance of radiology AI performance.**
 
 `rad-ai-sentinel` operationalizes post-deployment monitoring for existing imaging AI model outputs. It does **not** train an imaging model. Bring a CSV of predictions, ground truth, and study metadata; the tool validates the file, computes performance and drift metrics, surfaces stop-rule alerts, and generates a downloadable monitoring report.
 
 The project is motivated by the ACR-SIIM Practice Parameter for Imaging AI, approved by the ACR Council on May 5, 2026, which emphasizes AI inventory/version tracking, local acceptance testing, ongoing performance monitoring, drift/safety evaluation, stop rules, and privacy controls.
+
+## Repository Guide
+
+| Path | Purpose |
+|---|---|
+| `src/rad_ai_sentinel/cli.py` | CLI commands for demo generation, analysis, reports, and adapters |
+| `src/rad_ai_sentinel/analysis.py` | Shared analysis pipeline |
+| `src/rad_ai_sentinel/metrics/` | Binary, curve, calibration, confidence interval, and subgroup metrics |
+| `src/rad_ai_sentinel/drift/` | Missingness, drift, alert, and model-version checks |
+| `src/rad_ai_sentinel/app/main.py` | Streamlit dashboard |
+| `src/rad_ai_sentinel/report/` | HTML/PDF report generation |
+| `docs/` | Requirements, architecture, data-source notes, and research context |
+| `tests/` | Schema, metrics, drift, and product-surface tests |
 
 ## Demo
 
@@ -109,14 +126,37 @@ See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for RSNA/NIH, MIMIC-CXR, NIH Ch
 ## Development
 
 ```bash
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
 python -m ruff check .
 python -m pytest
 ```
 
-Current local verification:
+Quality gates:
 
-- `python -m ruff check .`
-- `python -m pytest` -> 61 passed
+| Check | Command |
+|---|---|
+| Lint | `python -m ruff check .` |
+| Tests | `python -m pytest` |
+| Demo smoke test | `rad-ai-sentinel demo --output outputs/demo --n 1200 --seed 42` |
+| Dashboard | `rad-ai-sentinel serve` |
+
+GitHub Actions runs linting and tests on Python 3.12.
+
+## Documentation
+
+- [Requirements](docs/REQUIREMENTS.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Data Sources](docs/DATA_SOURCES.md)
+- [Research Notes](docs/RESEARCH.md)
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Do not include patient data, credentials, or private institutional outputs in issues, tests, screenshots, or examples.
+
+## Security
+
+For vulnerability reporting and data-handling expectations, see [SECURITY.md](SECURITY.md).
 
 ## Safety Note
 

@@ -9,7 +9,7 @@ rad-ai-sentinel
 Build a runnable radiology AI performance monitoring framework that accepts existing model prediction CSVs, computes clinical AI surveillance metrics, detects drift and stop-rule breaches, stratifies by site/scanner/subgroup/version, and produces CLI, dashboard, and report outputs.
 
 ### Current Status
-Phase 9 - MVP complete with cross-platform PDF export, tested, documented, and ready for GitHub review.
+Phase 10 - MVP complete with cross-platform PDF export, tested, documented, and polished for public GitHub review.
 
 ---
 
@@ -56,6 +56,8 @@ None.
 
 ### Progress
 All requested MVP surfaces are implemented: Python package, CLI, Streamlit dashboard, synthetic data, public-data adapter, report generation, Dockerfile, GitHub Actions, screenshots, and demo GIF.
+
+GitHub presentation polish is complete: README badges and repository guide were added, contribution/security documents were added, and package/license metadata now points to `AKaturu/rad-ai-sentinel`.
 
 ### Remaining Work
 No blocking work remains for the requested MVP.
