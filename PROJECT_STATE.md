@@ -55,6 +55,14 @@ Added a PyInstaller desktop launcher, local build script, release documentation,
 #### Tests Added
 Release workflow includes packaged launcher `--self-check` smoke tests.
 
+### Feature: Roadmap Export and Case-Study Surfaces
+
+#### Validation
+Added `rsna-case-study-template` for safe RSNA external-prediction case-study scaffolds and expanded dashboard downloads to CSV, JSON, HTML, and opt-in PDF artifacts from the same in-memory analysis run. Release workflows now upload `.sha256` sidecars for native artifacts.
+
+#### Tests Added
+`tests/test_product_surfaces.py` covers the RSNA scaffold, overwrite protection, and dashboard export payload generation.
+
 ---
 
 ## Current Work
@@ -63,7 +71,7 @@ Release workflow includes packaged launcher `--self-check` smoke tests.
 None.
 
 ### Progress
-All requested MVP surfaces are implemented: Python package, CLI, Streamlit dashboard, synthetic data, public-data adapter, report generation, Dockerfile, GitHub Actions, screenshots, demo GIF, roadmap, and native desktop release workflow.
+All requested MVP surfaces are implemented: Python package, CLI, Streamlit dashboard, synthetic data, public-data adapter, report generation, Dockerfile, GitHub Actions, screenshots, demo GIF, roadmap, native desktop release workflow, export payloads, and RSNA case-study scaffolding.
 
 GitHub presentation polish is complete: README badges and repository guide were added, contribution/security documents were added, and package/license metadata now points to `AKaturu/rad-ai-sentinel`.
 
@@ -107,4 +115,4 @@ rad-ai-sentinel demo --output outputs/demo --n 1200 --seed 42
 rad-ai-sentinel serve
 ```
 
-The single next concrete step, if continuing beyond this MVP, is to connect a real external model prediction CSV to the RSNA adapter and add a short case study under `docs/`. Roadmap details are in `docs/ROADMAP.md`.
+The next concrete step beyond the implemented roadmap items is a configurable monitoring-plan file that records model owner, intended use, threshold, review cadence, subgroup requirements, and stop-rule contacts. Roadmap details are in `docs/ROADMAP.md`.
