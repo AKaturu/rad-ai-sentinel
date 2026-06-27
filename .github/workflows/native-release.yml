@@ -71,23 +71,45 @@ jobs:
         if: matrix.platform == 'macos'
         run: hdiutil create -volname RadAISentinel -srcfolder dist/native/RadAISentinel.app -ov -format UDZO dist/${{ matrix.artifact }}.dmg
 
+      - name: Generate artifact checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          if [ -f "${{ matrix.artifact }}.zip" ]; then
+            sha256sum "${{ matrix.artifact }}.zip" > "${{ matrix.artifact }}.zip.sha256"
+          elif [ -f "${{ matrix.artifact }}.tar.gz" ]; then
+            sha256sum "${{ matrix.artifact }}.tar.gz" > "${{ matrix.artifact }}.tar.gz.sha256"
+          elif [ -f "${{ matrix.artifact }}.dmg" ]; then
+            sha256sum "${{ matrix.artifact }}.dmg" > "${{ matrix.artifact }}.dmg.sha256"
+          else
+            echo "No release archive found for ${{ matrix.artifact }}" >&2
+            exit 1
+          fi
+
       - name: Upload Windows artifact
         if: matrix.platform == 'windows'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}.zip
+          path: |
+            dist/${{ matrix.artifact }}.zip
+            dist/${{ matrix.artifact }}.zip.sha256
 
       - name: Upload Linux artifact
         if: matrix.platform == 'linux'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}.tar.gz
+          path: |
+            dist/${{ matrix.artifact }}.tar.gz
+            dist/${{ matrix.artifact }}.tar.gz.sha256
 
       - name: Upload macOS artifact
         if: matrix.platform == 'macos'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}.dmg
+          path: |
+            dist/${{ matrix.artifact }}.dmg
+            dist/${{ matrix.artifact }}.dmg.sha256
