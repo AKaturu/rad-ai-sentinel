@@ -10,7 +10,6 @@ from __future__ import annotations
 import base64
 import io
 import logging
-import shutil
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
@@ -146,7 +145,7 @@ def _find_dejavu_sans() -> Path | None:
     return None
 
 
-def _register_fonts(pdf: object) -> str:  # noqa: ANN001
+def _register_fonts(pdf: object) -> str:
     """Register Unicode fonts and return the font family name to use."""
     dejavu = _find_dejavu_sans()
     if dejavu:
@@ -248,7 +247,7 @@ def _write_pdf_fpdf2(analysis: MonitoringAnalysis, pdf_path: Path) -> None:
 # ---- fpdf2 helper functions ----
 
 
-def _pdf_header(pdf: object, summary: dict) -> None:  # noqa: ANN001
+def _pdf_header(pdf: object, summary: dict) -> None:
     """Render the report header block."""
     # Eyebrow
     pdf.set_font(_PDF_FONT, "B", 9)
@@ -280,7 +279,7 @@ def _pdf_header(pdf: object, summary: dict) -> None:  # noqa: ANN001
     pdf.ln(8)
 
 
-def _pdf_kpi_boxes(pdf: object, summary: dict) -> None:  # noqa: ANN001
+def _pdf_kpi_boxes(pdf: object, summary: dict) -> None:
     """Render four KPI metric boxes in a row."""
     box_w = 40.5
     box_h = 22
@@ -320,7 +319,7 @@ def _pdf_kpi_boxes(pdf: object, summary: dict) -> None:  # noqa: ANN001
     pdf.set_y(y + box_h + 8)
 
 
-def _pdf_section(pdf: object, title: str, spacing: int = 1) -> None:  # noqa: ANN001
+def _pdf_section(pdf: object, title: str, spacing: int = 1) -> None:
     """Render a section heading."""
     pdf.ln(spacing * 4)
     pdf.set_font(_PDF_FONT, "B", 14)
@@ -329,7 +328,7 @@ def _pdf_section(pdf: object, title: str, spacing: int = 1) -> None:  # noqa: AN
     pdf.ln(2)
 
 
-def _pdf_table(pdf: object, df: pd.DataFrame) -> None:  # noqa: ANN001
+def _pdf_table(pdf: object, df: pd.DataFrame) -> None:
     """Render a pandas DataFrame as a styled table in the PDF."""
     if df.empty:
         pdf.set_font(_PDF_FONT, "I", 10)
@@ -387,7 +386,7 @@ def _pdf_table(pdf: object, df: pd.DataFrame) -> None:  # noqa: ANN001
     pdf.ln(4)
 
 
-def _pdf_embed_plot(pdf: object, analysis: MonitoringAnalysis, plot_type: str) -> None:  # noqa: ANN001
+def _pdf_embed_plot(pdf: object, analysis: MonitoringAnalysis, plot_type: str) -> None:
     """Generate and embed a matplotlib figure into the PDF."""
     buf = io.BytesIO()
 
