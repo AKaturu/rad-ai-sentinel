@@ -115,7 +115,7 @@ def serve(
         "--server.port",
         str(port),
     ]
-    raise typer.Exit(subprocess.run(cmd, check=False).returncode)
+    raise typer.Exit(code=subprocess.run(cmd, check=False).returncode)
 
 
 @app.command("adapt-rsna")

@@ -98,4 +98,7 @@ def compute_pr(
     )
     # precision_recall_curve returns precision/recall without a threshold for
     # the first point; pad thresholds to match length for downstream plotting.
+    if len(thresholds) < len(precision):
+        thresholds = np.pad(thresholds, (1, 0), constant_values=thresholds[0] if len(thresholds) else 1.0)
+    assert len(thresholds) == len(precision), f"thresholds {len(thresholds)} != precision {len(precision)}"
     return CurveResult(x=recall, y=precision, thresholds=thresholds, area=ci)

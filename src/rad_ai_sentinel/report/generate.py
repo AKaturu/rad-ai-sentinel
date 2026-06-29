@@ -49,7 +49,6 @@ ORANGE = "#b54d12"
 
 # PDF font family name used by fpdf2 helper functions.
 # Set once in ``_write_pdf_fpdf2`` after font registration.
-_PDF_FONT = "Helvetica"
 
 
 @dataclass(frozen=True)
@@ -158,81 +157,79 @@ def _register_fonts(pdf: object) -> str:
     return "Helvetica"  # built-in latin-1 fallback
 
 
-def _write_pdf_fpdf2(analysis: MonitoringAnalysis, pdf_path: Path) -> None:
+def _write_pdf_fpdf2(analysis: MonitoringAnalysis, pdf_path: Path, font_family: str = "Helvetica") -> None:
     """Generate a styled PDF using fpdf2 as a cross-platform fallback."""
     from fpdf import FPDF
-
-    global _PDF_FONT
 
     summary = analysis_summary_dict(analysis)
     pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.set_margins(15, 15, 15)
 
-    _PDF_FONT = _register_fonts(pdf)
+    font_family = _register_fonts(pdf)
 
     # --- Cover / Header ---
     pdf.add_page()
-    _pdf_header(pdf, summary)
-    _pdf_kpi_boxes(pdf, summary)
+    _pdf_header(pdf, summary, font_family)
+    _pdf_kpi_boxes(pdf, summary, font_family)
 
     # --- Stop-Rule Alerts ---
-    _pdf_section(pdf, "Stop-Rule Alerts", 1)
+    _pdf_section(pdf, "Stop-Rule Alerts", 1, font_family)
     alerts_df = alerts_frame(analysis)
     if alerts_df.empty:
-        pdf.set_font(_PDF_FONT, "I", 10)
+        pdf.set_font(font_family, "I", 10)
         pdf.set_text_color(*_hex_to_rgb(MUTED))
         pdf.cell(0, 6, "No stop-rule alerts fired.", new_x="LMARGIN", new_y="NEXT")
     else:
-        _pdf_table(pdf, alerts_df)
+        _pdf_table(pdf, alerts_df, font_family)
 
     # --- Executive Metrics ---
-    _pdf_section(pdf, "Executive Metrics", 1)
-    _pdf_table(pdf, summary_metrics_frame(analysis))
+    _pdf_section(pdf, "Executive Metrics", 1, font_family)
+    _pdf_table(pdf, summary_metrics_frame(analysis), font_family)
 
     # --- Plots (ROC + PR) ---
     pdf.add_page()
-    _pdf_section(pdf, "ROC Curve", 1)
+    _pdf_section(pdf, "ROC Curve", 1, font_family)
     _pdf_embed_plot(pdf, analysis, "roc")
-    _pdf_section(pdf, "Precision-Recall Curve", 1)
+    _pdf_section(pdf, "Precision-Recall Curve", 1, font_family)
     _pdf_embed_plot(pdf, analysis, "pr")
 
     # --- Calibration + Rolling ---
     pdf.add_page()
-    _pdf_section(pdf, "Calibration Curve", 1)
+    _pdf_section(pdf, "Calibration Curve", 1, font_family)
     _pdf_embed_plot(pdf, analysis, "calibration")
-    _pdf_section(pdf, "Rolling AUROC", 1)
+    _pdf_section(pdf, "Rolling AUROC", 1, font_family)
     _pdf_embed_plot(pdf, analysis, "rolling")
 
     # --- Temporal Drift ---
-    _pdf_section(pdf, "Temporal Drift", 1)
-    _pdf_table(pdf, drift_frame(analysis))
+    _pdf_section(pdf, "Temporal Drift", 1, font_family)
+    _pdf_table(pdf, drift_frame(analysis), font_family)
 
     # --- Subgroup / Scanner / Site ---
     pdf.add_page()
-    _pdf_section(pdf, "Subgroup, Scanner, and Site Performance", 1)
-    _pdf_table(pdf, stratified_metrics_frame(analysis))
+    _pdf_section(pdf, "Subgroup, Scanner, and Site Performance", 1, font_family)
+    _pdf_table(pdf, stratified_metrics_frame(analysis), font_family)
 
     # --- Missing Data ---
-    _pdf_section(pdf, "Missing-Data Analysis", 1)
-    _pdf_table(pdf, missing_data_frame(analysis))
+    _pdf_section(pdf, "Missing-Data Analysis", 1, font_family)
+    _pdf_table(pdf, missing_data_frame(analysis), font_family)
 
     # --- Model-Version Comparison ---
-    _pdf_section(pdf, "Model-Version Comparison", 1)
+    _pdf_section(pdf, "Model-Version Comparison", 1, font_family)
     versions_df = version_comparison_frame(analysis)
     if versions_df.empty:
-        pdf.set_font(_PDF_FONT, "I", 10)
+        pdf.set_font(font_family, "I", 10)
         pdf.set_text_color(*_hex_to_rgb(MUTED))
         pdf.cell(0, 6, "Only one model version was available.", new_x="LMARGIN", new_y="NEXT")
     else:
-        _pdf_table(pdf, versions_df)
+        _pdf_table(pdf, versions_df, font_family)
 
     # --- Footer note ---
     pdf.ln(10)
     pdf.set_draw_color(*_hex_to_rgb(LINE))
     pdf.line(15, pdf.get_y(), 195, pdf.get_y())
     pdf.ln(4)
-    pdf.set_font(_PDF_FONT, "I", 8)
+    pdf.set_font(font_family, "I", 8)
     pdf.set_text_color(*_hex_to_rgb(MUTED))
     pdf.multi_cell(
         0,
@@ -247,20 +244,20 @@ def _write_pdf_fpdf2(analysis: MonitoringAnalysis, pdf_path: Path) -> None:
 # ---- fpdf2 helper functions ----
 
 
-def _pdf_header(pdf: object, summary: dict) -> None:
+def _pdf_header(pdf: object, summary: dict, font_family: str = "Helvetica") -> None:
     """Render the report header block."""
     # Eyebrow
-    pdf.set_font(_PDF_FONT, "B", 9)
+    pdf.set_font(font_family, "B", 9)
     pdf.set_text_color(*_hex_to_rgb(BLUE))
     pdf.cell(0, 5, "RADIOLOGY AI PERFORMANCE MONITOR", new_x="LMARGIN", new_y="NEXT")
 
     # Title
-    pdf.set_font(_PDF_FONT, "B", 22)
+    pdf.set_font(font_family, "B", 22)
     pdf.set_text_color(*_hex_to_rgb(INK))
     pdf.cell(0, 12, "rad-ai-sentinel Monitoring Report", new_x="LMARGIN", new_y="NEXT")
 
     # Subtitle
-    pdf.set_font(_PDF_FONT, "", 10)
+    pdf.set_font(font_family, "", 10)
     pdf.set_text_color(*_hex_to_rgb(MUTED))
     n = summary["n"]
     n_pos = summary["n_positive"]
@@ -279,7 +276,7 @@ def _pdf_header(pdf: object, summary: dict) -> None:
     pdf.ln(8)
 
 
-def _pdf_kpi_boxes(pdf: object, summary: dict) -> None:
+def _pdf_kpi_boxes(pdf: object, summary: dict, font_family: str = "Helvetica") -> None:
     """Render four KPI metric boxes in a row."""
     box_w = 40.5
     box_h = 22
@@ -302,36 +299,36 @@ def _pdf_kpi_boxes(pdf: object, summary: dict) -> None:
         pdf.rect(x, y, box_w, box_h, style="DF")
         # Label
         pdf.set_xy(x + 3, y + 2)
-        pdf.set_font(_PDF_FONT, "", 8)
+        pdf.set_font(font_family, "", 8)
         pdf.set_text_color(*_hex_to_rgb(MUTED))
         pdf.cell(box_w - 6, 4, label, new_x="LMARGIN", new_y="NEXT")
         # Value
         pdf.set_xy(x + 3, y + 7)
-        pdf.set_font(_PDF_FONT, "B", 16)
+        pdf.set_font(font_family, "B", 16)
         pdf.set_text_color(*_hex_to_rgb(INK))
         pdf.cell(box_w - 6, 8, value, new_x="LMARGIN", new_y="NEXT")
         # Description
         pdf.set_xy(x + 3, y + 15)
-        pdf.set_font(_PDF_FONT, "", 7)
+        pdf.set_font(font_family, "", 7)
         pdf.set_text_color(*_hex_to_rgb(MUTED))
         pdf.cell(box_w - 6, 4, desc, new_x="LMARGIN", new_y="NEXT")
 
     pdf.set_y(y + box_h + 8)
 
 
-def _pdf_section(pdf: object, title: str, spacing: int = 1) -> None:
+def _pdf_section(pdf: object, title: str, spacing: int = 1, font_family: str = "Helvetica") -> None:
     """Render a section heading."""
     pdf.ln(spacing * 4)
-    pdf.set_font(_PDF_FONT, "B", 14)
+    pdf.set_font(font_family, "B", 14)
     pdf.set_text_color(*_hex_to_rgb(INK))
     pdf.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
     pdf.ln(2)
 
 
-def _pdf_table(pdf: object, df: pd.DataFrame) -> None:
+def _pdf_table(pdf: object, df: pd.DataFrame, font_family: str = "Helvetica") -> None:
     """Render a pandas DataFrame as a styled table in the PDF."""
     if df.empty:
-        pdf.set_font(_PDF_FONT, "I", 10)
+        pdf.set_font(font_family, "I", 10)
         pdf.set_text_color(*_hex_to_rgb(MUTED))
         pdf.cell(0, 6, "No data.", new_x="LMARGIN", new_y="NEXT")
         return
@@ -352,7 +349,7 @@ def _pdf_table(pdf: object, df: pd.DataFrame) -> None:
     row_h = 6
 
     # Header row
-    pdf.set_font(_PDF_FONT, "B", 8)
+    pdf.set_font(font_family, "B", 8)
     pdf.set_fill_color(*_hex_to_rgb(PANEL))
     pdf.set_text_color(*_hex_to_rgb(INK))
     for col_name in cols:
@@ -360,17 +357,17 @@ def _pdf_table(pdf: object, df: pd.DataFrame) -> None:
     pdf.ln(row_h)
 
     # Data rows
-    pdf.set_font(_PDF_FONT, "", 8)
+    pdf.set_font(font_family, "", 8)
     pdf.set_text_color(*_hex_to_rgb(INK))
     for _, row in df.iterrows():
         if pdf.get_y() + row_h > pdf.h - 20:
             pdf.add_page()
-            pdf.set_font(_PDF_FONT, "B", 8)
+            pdf.set_font(font_family, "B", 8)
             pdf.set_fill_color(*_hex_to_rgb(PANEL))
             for col_name in cols:
                 pdf.cell(col_w, row_h, col_name[:24], border=1, fill=True, new_x="RIGHT", new_y="TOP")
             pdf.ln(row_h)
-            pdf.set_font(_PDF_FONT, "", 8)
+            pdf.set_font(font_family, "", 8)
 
         for col_name in cols:
             val = row[col_name]

@@ -20,7 +20,7 @@ from ..config import (
     DEMOGRAPHIC_COLUMNS,
     OPERATIONAL_COLUMNS,
 )
-from .binary import BinaryMetrics, compute_binary_metrics
+from .binary import CI, BinaryMetrics, ConfusionCounts, compute_binary_metrics
 
 
 @dataclass(frozen=True)
@@ -75,7 +75,6 @@ def stratify(
         n = len(grp)
         if n < min_n:
             # Still record the level so the user can see it has insufficient data.
-            from .binary import CI, ConfusionCounts
 
             nan_ci = CI(estimate=float("nan"), lower=float("nan"), upper=float("nan"))
             nan_metrics = BinaryMetrics(
