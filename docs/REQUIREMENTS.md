@@ -32,7 +32,7 @@ Build `rad-ai-sentinel`, a runnable Python package for post-deployment radiology
 - `rad-ai-sentinel report --csv <file>` writes a downloadable report.
 - `rad-ai-sentinel serve` launches the dashboard.
 - README includes screenshots, a demo-video link, quick-start commands, and sample-data guidance.
-- `PROJECT_STATE.md` is current at handoff.
+- `STATUS.md` is current at handoff.
 
 ## Scope Boundaries
 
