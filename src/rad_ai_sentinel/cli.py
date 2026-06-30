@@ -32,6 +32,11 @@ from .governance import (
     write_model_inventory_template,
     write_monitoring_plan_template,
 )
+from .metrics.multiclass import multiclass_summary_frame
+from .multiclass_analysis import (
+    run_multiclass_monitoring_analysis,
+    write_multiclass_analysis_outputs,
+)
 from .report import generate_monitoring_report
 
 app = typer.Typer(
@@ -102,6 +107,33 @@ def compute(
     outputs = write_analysis_outputs(analysis, output, audit_log=audit_log)
     _print_summary_table(summary_metrics_frame(analysis))
     console.print(f"[green]Wrote outputs to:[/green] {output}")
+    for name, path in outputs.items():
+        console.print(f"  {name}: {path}")
+
+
+@app.command("compute-multiclass")
+def compute_multiclass_command(
+    csv: Annotated[Path, typer.Option("--csv", help="Multi-class monitoring CSV to analyze.")],
+    output: Annotated[Path, typer.Option(help="Directory for CSV/JSON outputs.")] = Path(
+        "outputs/multiclass"
+    ),
+    schema_profile: Annotated[
+        str,
+        typer.Option(help="Validation profile: public or production."),
+    ] = "public",
+    audit_log: Annotated[
+        Path | None,
+        typer.Option(help="Optional append-only audit log JSONL path."),
+    ] = None,
+) -> None:
+    """Compute label-based multi-class metrics and write machine-readable outputs."""
+    analysis = run_multiclass_monitoring_analysis(
+        pd.read_csv(csv),
+        schema_profile=schema_profile,
+    )
+    outputs = write_multiclass_analysis_outputs(analysis, output, audit_log=audit_log)
+    _print_summary_table(multiclass_summary_frame(analysis.metrics))
+    console.print(f"[green]Wrote multi-class outputs to:[/green] {output}")
     for name, path in outputs.items():
         console.print(f"  {name}: {path}")
 

@@ -18,6 +18,7 @@ Build `rad-ai-sentinel`, a runnable Python package for post-deployment radiology
 - Load configurable monitoring plans, model inventories, and alert-review metadata.
 - Write checksum-backed audit events for generated report and analysis artifacts when requested.
 - Provide schema profiles for public benchmark adaptation and production monitoring.
+- Support label-based multi-class monitoring as a separate schema and analysis mode, including aggregate metrics, per-class one-vs-rest metrics, confusion matrices, and machine-readable outputs.
 - Provide de-identified adapter examples for PACS/RIS/AI orchestration prediction exports.
 - Compare model versions, including paired DeLong AUROC testing when the same cases have scores from two versions.
 - Provide a CLI, Streamlit dashboard, downloadable HTML report, optional PDF report, synthetic demo data, Dockerfile, and GitHub Actions workflow.
@@ -37,6 +38,7 @@ Build `rad-ai-sentinel`, a runnable Python package for post-deployment radiology
 - `rad-ai-sentinel compute --csv <file>` writes machine-readable outputs.
 - `rad-ai-sentinel report --csv <file>` writes a downloadable report.
 - Governance templates, connector templates, and production schema-profile validation are available from the CLI.
+- `rad-ai-sentinel compute-multiclass --csv <file>` writes multi-class summary, per-class, confusion-matrix, and JSON outputs.
 - `rad-ai-sentinel serve` launches the dashboard.
 - README includes screenshots, a demo-video link, quick-start commands, and sample-data guidance.
 - `STATUS.md` is current at handoff.

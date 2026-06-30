@@ -37,6 +37,7 @@ This software is a research prototype and is not intended for independent clinic
 - Configurable stop-rule alerts and model-version comparison (DeLong test)
 - Monitoring-plan JSON, model inventory templates, alert review metadata, and audit-log events
 - Public versus production schema profiles and de-identified PACS/RIS/AI orchestration export templates
+- Label-based multi-class monitoring with per-class one-vs-rest metrics and confusion matrices
 - Machine-readable CSV, JSON, HTML, and optional PDF exports
 - Streamlit dashboard, CLI, synthetic data generator, RSNA public-data adapter
 
@@ -51,6 +52,9 @@ rad-ai-sentinel demo
 # Analyze your own monitoring CSV:
 rad-ai-sentinel compute --csv path/to/predictions.csv --output outputs/analysis
 
+# Analyze a multi-class label CSV:
+rad-ai-sentinel compute-multiclass --csv path/to/multiclass_predictions.csv --output outputs/multiclass
+
 # Create governance and connector templates:
 rad-ai-sentinel monitoring-plan-template monitoring_plan.json
 rad-ai-sentinel inventory-template model_inventory.csv
@@ -62,9 +66,35 @@ rad-ai-sentinel serve
 
 Then open [http://localhost:8501](http://localhost:8501).
 
+## Input CSV Format
+
+Binary monitoring requires:
+
+| Column | Description |
+|---|---|
+| `patient_id` | De-identified patient or case identifier |
+| `study_date` | Examination date |
+| `model_version` | Deployed model version |
+| `y_true` | Binary ground-truth label, `0` or `1` |
+| `y_pred_proba` | Predicted probability for class `1`, from `0` to `1` |
+| `y_pred_binary` | Thresholded prediction, `0` or `1` |
+
+Multi-class monitoring requires:
+
+| Column | Description |
+|---|---|
+| `patient_id` | De-identified patient or case identifier |
+| `study_date` | Examination date |
+| `model_version` | Deployed model version |
+| `y_true` | Ground-truth class label |
+| `y_pred_label` | Predicted class label |
+
+Both modes accept optional `site`, `scanner_manufacturer`, `modality`, `age_group`, `sex`, and `race_ethnicity` columns. The `production` schema profile requires `site`, `scanner_manufacturer`, and `modality`.
+
 ## Limitations
 
 - Public radiology datasets generally do not include deployed model outputs; public smoke tests need either real model predictions or clearly labeled synthetic scores
+- Multi-class monitoring currently reports label-based accuracy, macro/weighted metrics, per-class one-vs-rest metrics, and confusion matrices; probability-based multi-class calibration is not yet implemented
 - Subgroup findings must be interpreted with sample-size and missingness context
 - This project is not a medical device and does not certify clinical performance
 - Not intended for patient-care decisions without institutional review, validation, and clinical oversight

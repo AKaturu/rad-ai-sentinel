@@ -8,6 +8,7 @@
 - Calibration slope/intercept, site-level calibration drift, Wasserstein/KS score-drift summaries, and configurable subgroup sample-size floors.
 - Regression fixtures for malformed CSVs, missing subgroup fields, and small-sample subgroup suppression.
 - Tagged desktop artifact publication to GitHub Releases, dashboard guardrail checks, and an initial versioned docs scaffold.
+- Label-based multi-class monitoring with `compute-multiclass`, per-class one-vs-rest metrics, confusion matrices, and CSV/JSON outputs.
 
 ## 0.1.0 - 2026-06-28
 

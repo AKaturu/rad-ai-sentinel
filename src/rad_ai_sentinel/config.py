@@ -18,6 +18,7 @@ COL_MODEL_VERSION = "model_version"
 COL_Y_TRUE = "y_true"
 COL_Y_PRED_PROBA = "y_pred_proba"
 COL_Y_PRED_BINARY = "y_pred_binary"
+COL_Y_PRED_LABEL = "y_pred_label"
 
 # Optional metadata columns used for stratification. May be missing/empty.
 COL_SITE = "site"
@@ -34,6 +35,14 @@ REQUIRED_COLUMNS: tuple[str, ...] = (
     COL_Y_TRUE,
     COL_Y_PRED_PROBA,
     COL_Y_PRED_BINARY,
+)
+
+MULTICLASS_REQUIRED_COLUMNS: tuple[str, ...] = (
+    COL_PATIENT_ID,
+    COL_STUDY_DATE,
+    COL_MODEL_VERSION,
+    COL_Y_TRUE,
+    COL_Y_PRED_LABEL,
 )
 
 OPTIONAL_COLUMNS: tuple[str, ...] = (

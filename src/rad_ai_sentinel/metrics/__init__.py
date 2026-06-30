@@ -9,6 +9,7 @@ Sub-modules are also importable individually for targeted analysis:
   - ``curves``: AUROC, AUPRC (BCa bootstrap CIs), ROC/PR curve data
   - ``calibration``: Brier score, ECE, reliability diagram data
   - ``stratified``: per-subgroup metrics (site, scanner, modality, demographics)
+  - ``multiclass``: label-based multi-class summary, per-class, and confusion metrics
   - ``ci``: Wilson CI, BCa bootstrap CI primitives
   - ``delong``: DeLong test for pairwise AUROC comparison
 """
@@ -30,6 +31,7 @@ from ..config import (
 from .binary import BinaryMetrics, compute_binary_metrics
 from .calibration import CalibrationMetrics, compute_calibration
 from .curves import CurveResult, compute_pr, compute_roc
+from .multiclass import MulticlassMetrics, compute_multiclass_metrics
 from .stratified import StratifiedResult, stratify_all
 
 
@@ -132,6 +134,8 @@ __all__ = [
     "CalibrationMetrics",
     "CurveResult",
     "FullMetricsResult",
+    "MulticlassMetrics",
     "StratifiedResult",
     "compute_all_metrics",
+    "compute_multiclass_metrics",
 ]

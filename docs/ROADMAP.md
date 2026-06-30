@@ -21,7 +21,7 @@ This roadmap tracks planned work after the initial public MVP. Items are grouped
 - [Implemented] Add additional calibration summaries, including calibration slope/intercept and site-level calibration drift.
 - [Implemented] Add controls for subgroup reporting and suppress unstable estimates below user-configured sample-size floors.
 - [Implemented] Add richer temporal drift methods for model score distributions.
-- Support multi-class monitoring as a separate schema and analysis mode.
+- [Implemented] Support label-based multi-class monitoring as a separate schema and analysis mode.
 
 ## Data Connectors
 
