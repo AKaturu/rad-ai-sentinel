@@ -218,8 +218,8 @@ def rolling_auroc(
         if len(window_df) < min_samples:
             auroc_values.append(float("nan"))
         else:
-            yt = window_df[COL_Y_TRUE].values
-            yp = window_df[COL_Y_PRED_PROBA].values
+            yt = window_df[COL_Y_TRUE].to_numpy(dtype=int)
+            yp = window_df[COL_Y_PRED_PROBA].to_numpy(dtype=float)
             unique_labels = np.unique(yt)
             if len(unique_labels) < 2:
                 auroc_values.append(float("nan"))
@@ -310,8 +310,8 @@ def compute_drift(
     ref_df = df_sorted.iloc[:ref_n]
     cur_df = df_sorted.iloc[ref_n:]
 
-    ref_scores = ref_df[COL_Y_PRED_PROBA].values
-    cur_scores = cur_df[COL_Y_PRED_PROBA].values
+    ref_scores = ref_df[COL_Y_PRED_PROBA].to_numpy(dtype=float)
+    cur_scores = cur_df[COL_Y_PRED_PROBA].to_numpy(dtype=float)
 
     psi_val = psi(ref_scores, cur_scores, n_bins=n_bins)
     kl_val = kl_divergence(ref_scores, cur_scores, n_bins=n_bins)

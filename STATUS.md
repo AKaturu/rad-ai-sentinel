@@ -26,6 +26,7 @@
 
 ## Validation Status
 - **Unit tests**: Pass (81 tests covering core metrics, multi-class metrics, drift, schema, governance, connectors, and product surfaces)
+- **Type checking**: Pass (`python -m mypy src`; enforced in CI)
 - **Synthetic end-to-end test**: Complete (demo pipeline generates synthetic data, runs metrics, produces report)
 - **Public-data evaluation**: Not completed (RSNA adapter available for public smoke test but no published evaluation against a clinical benchmark)
 - **Expert review**: Not completed

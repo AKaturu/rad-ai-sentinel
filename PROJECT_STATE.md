@@ -47,6 +47,14 @@ Verified with `tests/test_multiclass.py`, CLI smoke coverage for `compute-multic
 #### Tests Added
 `tests/test_multiclass.py` covers the multi-class schema, aggregate metrics, per-class one-vs-rest metrics, confusion matrices, JSON/CSV outputs, audit-log events, CLI output generation, and sparse-label JSON handling.
 
+### Feature: Mypy And CI Type Hardening
+
+#### Validation
+Verified with `python -m mypy src`, `python -m ruff check .`, the dashboard guardrail script, and the full pytest suite.
+
+#### Tests Added
+No runtime tests were needed; this pass fixes static typing annotations/conversions and adds `python -m mypy src` to CI.
+
 ---
 
 ## Current Work
@@ -80,7 +88,7 @@ Public-data evaluation, independent expert review, institutional validation, and
 
 ### Technical Concerns
 The dashboard guardrail is intentionally lightweight and not a substitute for full browser-based accessibility testing.
-Mypy still fails in this Windows/Python 3.12 environment before or during project checking because the repo targets Python 3.11 while installed NumPy stubs use newer syntax; a Python 3.12 diagnostic also surfaces pre-existing typing debt in unrelated modules.
+NumPy is capped below 2.3 because newer stubs used by this workstation can include syntax mypy will not parse under the repo's Python 3.11 target.
 
 ---
 
@@ -89,6 +97,7 @@ Mypy still fails in this Windows/Python 3.12 environment before or during projec
 Start with `src/rad_ai_sentinel/analysis.py`, `src/rad_ai_sentinel/multiclass_analysis.py`, `src/rad_ai_sentinel/metrics/multiclass.py`, `src/rad_ai_sentinel/governance.py`, and `src/rad_ai_sentinel/data/connectors.py`. Verify with:
 
 ```bash
+python -m mypy src
 PYTHONPATH=src python -m pytest
 python -m ruff check .
 python scripts/check_dashboard_accessibility.py

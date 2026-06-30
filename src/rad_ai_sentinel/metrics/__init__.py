@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import numpy as np
 import pandas as pd
 
 from ..config import (
@@ -84,11 +85,11 @@ def compute_all_metrics(
     -------
     FullMetricsResult
     """
-    y_true = df[COL_Y_TRUE].values
-    y_pred = df[COL_Y_PRED_BINARY].values
-    y_proba = df[COL_Y_PRED_PROBA].values
+    y_true = df[COL_Y_TRUE].to_numpy(dtype=int)
+    y_pred = df[COL_Y_PRED_BINARY].to_numpy(dtype=int)
+    y_proba = df[COL_Y_PRED_PROBA].to_numpy(dtype=float)
     n = len(df)
-    n_positive = int(y_true.sum())
+    n_positive = int(np.sum(y_true))
     prevalence = n_positive / n if n > 0 else 0.0
 
     # Overall metrics.
@@ -111,8 +112,8 @@ def compute_all_metrics(
         for version, vdf in df.groupby(COL_MODEL_VERSION, dropna=True):
             if len(vdf) >= 10:
                 versions[str(version)] = compute_binary_metrics(
-                    vdf[COL_Y_TRUE].values,
-                    vdf[COL_Y_PRED_BINARY].values,
+                    vdf[COL_Y_TRUE].to_numpy(dtype=int),
+                    vdf[COL_Y_PRED_BINARY].to_numpy(dtype=int),
                     confidence=confidence,
                 )
 

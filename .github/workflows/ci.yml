@@ -31,6 +31,9 @@ jobs:
       - name: Lint
         run: python -m ruff check .
 
+      - name: Type check
+        run: python -m mypy src
+
       - name: Test
         run: python -m pytest
 

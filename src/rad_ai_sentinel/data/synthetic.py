@@ -8,6 +8,7 @@ exam metadata, model versions, missing demographics, and planted drift.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -165,7 +166,7 @@ def _paired_version_holdout(
     return rows
 
 
-def write_synthetic_csv(path: str | Path, **kwargs: object) -> pd.DataFrame:
+def write_synthetic_csv(path: str | Path, **kwargs: Any) -> pd.DataFrame:
     """Generate synthetic data and write it to ``path``."""
     df = generate_synthetic_monitoring_data(**kwargs)
     out = Path(path)
@@ -198,11 +199,8 @@ def adapt_rsna_pneumonia_labels(
     if target_col not in labels.columns:
         raise ValueError("RSNA labels CSV must contain Target or target")
 
-    grouped = (
-        labels.groupby("patientId", as_index=False)[target_col]
-        .max()
-        .rename(columns={"patientId": COL_PATIENT_ID, target_col: COL_Y_TRUE})
-    )
+    grouped = labels.groupby("patientId", as_index=False).agg({target_col: "max"})
+    grouped = grouped.rename(columns={"patientId": COL_PATIENT_ID, target_col: COL_Y_TRUE})
 
     out = grouped.copy()
     out[COL_MODEL_VERSION] = model_version

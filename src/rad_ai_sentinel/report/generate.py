@@ -13,6 +13,7 @@ import logging
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 import pandas as pd
@@ -164,7 +165,7 @@ def _find_dejavu_sans() -> Path | None:
     return None
 
 
-def _register_fonts(pdf: object) -> str:
+def _register_fonts(pdf: Any) -> str:
     """Register Unicode fonts and return the font family name to use."""
     dejavu = _find_dejavu_sans()
     if dejavu:
@@ -270,7 +271,7 @@ def _write_pdf_fpdf2(
 # ---- fpdf2 helper functions ----
 
 
-def _pdf_header(pdf: object, summary: dict, font_family: str = "Helvetica") -> None:
+def _pdf_header(pdf: Any, summary: dict[str, Any], font_family: str = "Helvetica") -> None:
     """Render the report header block."""
     # Eyebrow
     pdf.set_font(font_family, "B", 9)
@@ -302,7 +303,7 @@ def _pdf_header(pdf: object, summary: dict, font_family: str = "Helvetica") -> N
     pdf.ln(8)
 
 
-def _pdf_kpi_boxes(pdf: object, summary: dict, font_family: str = "Helvetica") -> None:
+def _pdf_kpi_boxes(pdf: Any, summary: dict[str, Any], font_family: str = "Helvetica") -> None:
     """Render four KPI metric boxes in a row."""
     box_w = 40.5
     box_h = 22
@@ -346,7 +347,7 @@ def _pdf_kpi_boxes(pdf: object, summary: dict, font_family: str = "Helvetica") -
     pdf.set_y(y + box_h + 8)
 
 
-def _pdf_section(pdf: object, title: str, spacing: int = 1, font_family: str = "Helvetica") -> None:
+def _pdf_section(pdf: Any, title: str, spacing: int = 1, font_family: str = "Helvetica") -> None:
     """Render a section heading."""
     pdf.ln(spacing * 4)
     pdf.set_font(font_family, "B", 14)
@@ -355,7 +356,7 @@ def _pdf_section(pdf: object, title: str, spacing: int = 1, font_family: str = "
     pdf.ln(2)
 
 
-def _pdf_table(pdf: object, df: pd.DataFrame, font_family: str = "Helvetica") -> None:
+def _pdf_table(pdf: Any, df: pd.DataFrame, font_family: str = "Helvetica") -> None:
     """Render a pandas DataFrame as a styled table in the PDF."""
     if df.empty:
         pdf.set_font(font_family, "I", 10)
@@ -415,7 +416,7 @@ def _pdf_table(pdf: object, df: pd.DataFrame, font_family: str = "Helvetica") ->
     pdf.ln(4)
 
 
-def _pdf_embed_plot(pdf: object, analysis: MonitoringAnalysis, plot_type: str) -> None:
+def _pdf_embed_plot(pdf: Any, analysis: MonitoringAnalysis, plot_type: str) -> None:
     """Generate and embed a matplotlib figure into the PDF."""
     buf = io.BytesIO()
 

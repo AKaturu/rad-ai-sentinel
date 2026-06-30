@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 
@@ -174,10 +174,11 @@ def load_model_inventory(path: str | Path) -> list[ModelInventoryItem]:
     source = Path(path)
     if source.suffix.lower() == ".json":
         payload = json.loads(source.read_text(encoding="utf-8"))
-        rows = payload["models"] if isinstance(payload, dict) else payload
+        rows = cast(list[dict[str, Any]], payload["models"] if isinstance(payload, dict) else payload)
         return [model_inventory_item_from_dict(row) for row in rows]
     frame = pd.read_csv(source).fillna("")
-    return [model_inventory_item_from_dict(row) for row in frame.to_dict(orient="records")]
+    rows = cast(list[dict[str, Any]], frame.to_dict(orient="records"))
+    return [model_inventory_item_from_dict(row) for row in rows]
 
 
 def save_model_inventory(items: list[ModelInventoryItem], path: str | Path) -> Path:
@@ -230,9 +231,9 @@ def load_alert_reviews(path: str | Path) -> tuple[AlertReview, ...]:
     source = Path(path)
     if source.suffix.lower() == ".json":
         payload = json.loads(source.read_text(encoding="utf-8"))
-        rows = payload["reviews"] if isinstance(payload, dict) else payload
+        rows = cast(list[dict[str, Any]], payload["reviews"] if isinstance(payload, dict) else payload)
     else:
-        rows = pd.read_csv(source).fillna("").to_dict(orient="records")
+        rows = cast(list[dict[str, Any]], pd.read_csv(source).fillna("").to_dict(orient="records"))
     return tuple(alert_review_from_dict(row) for row in rows)
 
 
