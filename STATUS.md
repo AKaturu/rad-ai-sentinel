@@ -17,6 +17,11 @@
 - RSNA Pneumonia Detection Challenge adapter for public data smoke testing
 - Synthetic data generator for demos and pipeline validation
 - Native desktop release packaging (Windows, macOS, Linux)
+- Configurable monitoring-plan JSON, model inventory import/export, alert review metadata, and audit-log events
+- Production/public schema profiles plus de-identified PACS/RIS/AI orchestration connector templates
+- Calibration slope/intercept, site-level calibration drift, Wasserstein/KS score-drift summaries, and configurable subgroup sample-size floors
+- Regression fixtures for malformed CSVs, missing subgroup fields, and small-sample subgroup suppression
+- Tagged GitHub Release attachment workflow, dashboard accessibility/responsive guardrail checks, and versioned documentation scaffold
 
 ## Validation Status
 - **Unit tests**: Pass (core metrics, drift, schema, product-surface tests)
@@ -27,7 +32,8 @@
 - **Prospective clinical validation**: Not completed
 
 ## Planned Work
-- Configurable monitoring-plan file (model owner, intended use, thresholds, review cadence)
-- Expanded public data-source adapters
+- Multi-class monitoring as a separate schema and analysis mode
+- Additional temporal drift methods for input metadata
+- Expanded public data-source adapters beyond RSNA-style case studies
 - Multi-model comparison dashboards
 - External validation with clinical AI monitoring data

@@ -25,6 +25,7 @@ from ..config import (
     COL_Y_PRED_PROBA,
     COL_Y_TRUE,
     DEFAULT_CONFIDENCE_LEVEL,
+    DEFAULT_SUBGROUP_MIN_N,
 )
 from .binary import BinaryMetrics, compute_binary_metrics
 from .calibration import CalibrationMetrics, compute_calibration
@@ -59,6 +60,7 @@ def compute_all_metrics(
     *,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
     stratifiers: list[str] | None = None,
+    min_subgroup_n: int = DEFAULT_SUBGROUP_MIN_N,
     n_resamples: int = 300,
 ) -> FullMetricsResult:
     """Run the full metric suite on a validated dataframe.
@@ -71,6 +73,8 @@ def compute_all_metrics(
         Confidence level for all CIs.
     stratifiers:
         Stratifier columns to analyse; defaults to all available stratifiers.
+    min_subgroup_n:
+        Minimum subgroup sample size required before point estimates are shown.
     n_resamples:
         Bootstrap resamples for AUROC, AUPRC, and Brier confidence intervals.
 
@@ -92,7 +96,12 @@ def compute_all_metrics(
     calibration = compute_calibration(y_true, y_proba, n_bins=10, n_resamples=n_resamples)
 
     # Stratified metrics (only for columns present in df).
-    stratified = stratify_all(df, stratifiers=stratifiers, confidence=confidence)
+    stratified = stratify_all(
+        df,
+        stratifiers=stratifiers,
+        confidence=confidence,
+        min_n=min_subgroup_n,
+    )
 
     # Per-version summary (if model_version column is present).
     versions: dict[str, BinaryMetrics] = {}

@@ -5,7 +5,9 @@
 - `schemas`: validates the public CSV contract with `pandera`.
 - `metrics`: computes binary metrics, curves, calibration, confidence intervals, stratification, and DeLong comparisons.
 - `drift`: computes PSI, KL divergence, rolling AUROC, CUSUM, missing-data analysis, alerts, and version comparisons.
-- `data`: generates synthetic monitoring data and adapts RSNA Pneumonia labels into the monitoring schema.
+- `data`: generates synthetic monitoring data and adapts RSNA, PACS/RIS, and AI orchestration exports into the monitoring schema.
+- `governance`: loads monitoring plans, model inventories, and alert review metadata.
+- `audit`: appends checksum-backed JSONL events and reads audit logs without mutation.
 - `analysis`: orchestrates validation, metrics, drift, missingness, alerts, version comparisons, and output tables.
 - `plots`: creates interactive Plotly figures for the dashboard.
 - `report`: renders HTML and optional PDF reports from the shared analysis object.
@@ -34,6 +36,10 @@ flowchart LR
 - `generate_monitoring_report(data, output_dir) -> ReportArtifacts`
 - `generate_synthetic_monitoring_data(n, seed) -> pd.DataFrame`
 - `adapt_rsna_pneumonia_labels(labels_csv, output_csv, ...) -> pd.DataFrame`
+- `adapt_prediction_export(export_csv, output_csv, ...) -> pd.DataFrame`
+- `load_monitoring_plan(path) -> MonitoringPlan`
+- `load_model_inventory(path) -> list[ModelInventoryItem]`
+- `read_audit_log(path) -> tuple[dict, ...]`
 
 ## Failure Modes
 
@@ -42,3 +48,5 @@ flowchart LR
 - Single-class windows: AUROC is omitted for that window rather than crashing.
 - PDF system dependency missing: HTML report is still produced and a PDF error file is written.
 - Public data without predictions: RSNA adapter marks generated scores as synthetic pipeline-test predictions by requiring an explicit command path rather than silently treating them as real deployment data.
+- Public/production context mismatch: the public schema profile tolerates sparse benchmark metadata; the production profile requires operational site, scanner, and modality fields.
+- Audit traceability: generated report/analysis events write artifact checksums, not row-level clinical data.

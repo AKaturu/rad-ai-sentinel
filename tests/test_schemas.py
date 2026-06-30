@@ -12,7 +12,7 @@ from rad_ai_sentinel.config import (
     COL_Y_PRED_PROBA,
     COL_Y_TRUE,
 )
-from rad_ai_sentinel.schemas import validate_dataframe
+from rad_ai_sentinel.schemas import SchemaProfile, validate_dataframe
 
 # We validate with lazy=True, so multi-error failures raise SchemaErrors (plural)
 # and single-error validations also raise the collective SchemaErrors. Both
@@ -43,6 +43,22 @@ def test_valid_minimal_dataframe_without_metadata_passes() -> None:
     )
     out = validate_dataframe(df)
     assert len(out) == 2
+
+
+def test_production_profile_requires_operational_metadata() -> None:
+    """Production monitoring requires site/scanner/modality metadata."""
+    df = pd.DataFrame(
+        {
+            COL_PATIENT_ID: ["p1", "p2"],
+            "study_date": ["2026-01-01", "2026-01-02"],
+            "model_version": ["v2.0", "v2.0"],
+            COL_Y_TRUE: [1, 0],
+            COL_Y_PRED_PROBA: [0.9, 0.1],
+            COL_Y_PRED_BINARY: [1, 0],
+        }
+    )
+    with pytest.raises(ValueError, match="Production schema profile"):
+        validate_dataframe(df, profile=SchemaProfile.PRODUCTION)
 
 
 def test_out_of_range_probability_raises(tiny_df: pd.DataFrame) -> None:

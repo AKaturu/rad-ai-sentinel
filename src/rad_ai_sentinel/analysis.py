@@ -18,6 +18,7 @@ from .config import (
     COL_Y_PRED_PROBA,
     COL_Y_TRUE,
     DEFAULT_CONFIDENCE_LEVEL,
+    DEFAULT_SUBGROUP_MIN_N,
     DEFAULT_THRESHOLDS,
     AlertThresholds,
 )
@@ -31,10 +32,12 @@ from .drift import (
     compare_all_versions,
     compute_drift,
 )
+from .governance import AlertReview, MonitoringPlan, alert_reviews_by_rule
 from .metrics import FullMetricsResult, compute_all_metrics
 from .metrics.binary import BinaryMetrics, compute_binary_metrics
+from .metrics.calibration import SiteCalibrationDrift, compute_site_calibration_drift
 from .metrics.stratified import max_subgroup_gap
-from .schemas import validate_dataframe
+from .schemas import SchemaProfile, validate_dataframe
 
 
 @dataclass(frozen=True)
@@ -52,6 +55,9 @@ class MonitoringAnalysis:
     current_binary: BinaryMetrics | None
     subgroup_sensitivity_gap: float
     reference_fraction: float
+    site_calibration_drift: list[SiteCalibrationDrift]
+    monitoring_plan: MonitoringPlan | None = None
+    alert_reviews: tuple[AlertReview, ...] = ()
 
     @property
     def start_date(self) -> pd.Timestamp:
@@ -62,24 +68,44 @@ class MonitoringAnalysis:
         return pd.to_datetime(self.dataframe[COL_STUDY_DATE]).max()
 
 
-def load_and_validate_csv(path: str | Path) -> pd.DataFrame:
+def load_and_validate_csv(
+    path: str | Path,
+    *,
+    profile: str | SchemaProfile = SchemaProfile.PUBLIC,
+) -> pd.DataFrame:
     """Read a CSV and validate it against the public contract."""
-    return validate_dataframe(pd.read_csv(path))
+    return validate_dataframe(pd.read_csv(path), profile=profile)
 
 
 def run_monitoring_analysis(
     df: pd.DataFrame,
     *,
-    thresholds: AlertThresholds = DEFAULT_THRESHOLDS,
+    thresholds: AlertThresholds | None = None,
+    monitoring_plan: MonitoringPlan | None = None,
+    schema_profile: str | SchemaProfile = SchemaProfile.PUBLIC,
+    alert_reviews: tuple[AlertReview, ...] = (),
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+    subgroup_min_n: int | None = None,
     reference_fraction: float = 0.30,
     n_resamples: int = 200,
 ) -> MonitoringAnalysis:
     """Validate data and run the full monitoring pipeline."""
-    validated = validate_dataframe(df).sort_values(COL_STUDY_DATE).reset_index(drop=True)
+    if monitoring_plan is not None:
+        thresholds = monitoring_plan.thresholds
+        if subgroup_min_n is None:
+            subgroup_min_n = monitoring_plan.subgroup_min_n
+    thresholds = thresholds or DEFAULT_THRESHOLDS
+    subgroup_min_n = subgroup_min_n or DEFAULT_SUBGROUP_MIN_N
+
+    validated = (
+        validate_dataframe(df, profile=schema_profile)
+        .sort_values(COL_STUDY_DATE)
+        .reset_index(drop=True)
+    )
     metrics = compute_all_metrics(
         validated,
         confidence=confidence,
+        min_subgroup_n=subgroup_min_n,
         n_resamples=n_resamples,
     )
     drift = compute_drift(
@@ -90,6 +116,11 @@ def run_monitoring_analysis(
     )
     missing = analyze_missing_data(validated)
     version_comparisons = compare_all_versions(validated, confidence=confidence)
+    site_calibration_drift = compute_site_calibration_drift(
+        validated,
+        reference_fraction=reference_fraction,
+        min_n=max(subgroup_min_n, 10),
+    )
 
     baseline_df, current_df = _split_reference_current(validated, reference_fraction)
     baseline_auroc = _safe_auroc(baseline_df)
@@ -133,11 +164,22 @@ def run_monitoring_analysis(
         current_binary=current_binary,
         subgroup_sensitivity_gap=subgroup_gap,
         reference_fraction=reference_fraction,
+        site_calibration_drift=site_calibration_drift,
+        monitoring_plan=monitoring_plan,
+        alert_reviews=alert_reviews,
     )
 
 
-def write_analysis_outputs(analysis: MonitoringAnalysis, output_dir: str | Path) -> dict[str, Path]:
+def write_analysis_outputs(
+    analysis: MonitoringAnalysis,
+    output_dir: str | Path,
+    *,
+    audit_log: str | Path | None = None,
+    audit_actor: str = "rad-ai-sentinel",
+) -> dict[str, Path]:
     """Persist analysis tables as CSV plus a compact JSON summary."""
+    from .audit import append_audit_event, build_artifact_event
+
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     outputs = {
@@ -146,6 +188,7 @@ def write_analysis_outputs(analysis: MonitoringAnalysis, output_dir: str | Path)
         "missing": out / "missing_data.csv",
         "alerts": out / "alerts.csv",
         "drift": out / "drift.csv",
+        "site_calibration": out / "site_calibration_drift.csv",
         "versions": out / "model_versions.csv",
         "json": out / "metrics_summary.json",
     }
@@ -154,11 +197,26 @@ def write_analysis_outputs(analysis: MonitoringAnalysis, output_dir: str | Path)
     missing_data_frame(analysis).to_csv(outputs["missing"], index=False)
     alerts_frame(analysis).to_csv(outputs["alerts"], index=False)
     drift_frame(analysis).to_csv(outputs["drift"], index=False)
+    site_calibration_frame(analysis).to_csv(outputs["site_calibration"], index=False)
     version_comparison_frame(analysis).to_csv(outputs["versions"], index=False)
     outputs["json"].write_text(
         json.dumps(analysis_summary_dict(analysis), indent=2),
         encoding="utf-8",
     )
+    if audit_log:
+        append_audit_event(
+            audit_log,
+            build_artifact_event(
+                event_type="analysis_outputs_written",
+                actor=audit_actor,
+                artifact=outputs["json"],
+                details={
+                    "output_dir": str(out),
+                    "alerts": len(analysis.alerts.alerts),
+                    "critical_alerts": analysis.alerts.n_critical,
+                },
+            ),
+        )
     return outputs
 
 
@@ -180,6 +238,12 @@ def summary_metrics_frame(analysis: MonitoringAnalysis) -> pd.DataFrame:
             analysis.metrics.calibration.brier,
         ),
         _metric_row("Expected calibration error", analysis.metrics.calibration.ece, None),
+        _metric_row(
+            "Calibration intercept",
+            analysis.metrics.calibration.calibration_intercept,
+            None,
+        ),
+        _metric_row("Calibration slope", analysis.metrics.calibration.calibration_slope, None),
         _metric_row("Prevalence", analysis.metrics.prevalence, None),
     ]
     return pd.DataFrame(rows)
@@ -201,6 +265,7 @@ def stratified_metrics_frame(analysis: MonitoringAnalysis) -> pd.DataFrame:
                     "npv": _round(m.npv.estimate),
                     "accuracy": _round(m.accuracy.estimate),
                     "prevalence": _round(m.prevalence),
+                    "status": _subgroup_status(m),
                     "tp": m.counts.tp,
                     "fp": m.counts.fp,
                     "tn": m.counts.tn,
@@ -227,18 +292,38 @@ def missing_data_frame(analysis: MonitoringAnalysis) -> pd.DataFrame:
 
 
 def alerts_frame(analysis: MonitoringAnalysis) -> pd.DataFrame:
-    return pd.DataFrame(
-        [
+    reviews = alert_reviews_by_rule(analysis.alert_reviews)
+    rows: list[dict[str, Any]] = []
+    for alert in analysis.alerts.alerts:
+        review = reviews.get(alert.rule) or AlertReview(alert.rule)
+        rows.append(
             {
                 "severity": alert.severity,
                 "rule": alert.rule,
                 "message": alert.message,
                 "observed": _round(alert.observed),
                 "threshold": _round(alert.threshold),
+                "reviewer": review.reviewer,
+                "disposition": review.disposition,
+                "follow_up": review.follow_up,
+                "reviewed_at": review.reviewed_at,
+                "review_notes": review.notes,
             }
-            for alert in analysis.alerts.alerts
+        )
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "severity",
+            "rule",
+            "message",
+            "observed",
+            "threshold",
+            "reviewer",
+            "disposition",
+            "follow_up",
+            "reviewed_at",
+            "review_notes",
         ],
-        columns=["severity", "rule", "message", "observed", "threshold"],
     )
 
 
@@ -256,6 +341,21 @@ def drift_frame(analysis: MonitoringAnalysis) -> pd.DataFrame:
                 "level": "",
             },
             {
+                "metric": "Wasserstein distance",
+                "value": _round(analysis.drift.wasserstein_value),
+                "level": "score distribution",
+            },
+            {
+                "metric": "KS statistic",
+                "value": _round(analysis.drift.ks_statistic),
+                "level": "score distribution",
+            },
+            {
+                "metric": "KS p-value",
+                "value": _round(analysis.drift.ks_p_value),
+                "level": "score distribution",
+            },
+            {
                 "metric": "Baseline AUROC",
                 "value": _round(analysis.baseline_auroc),
                 "level": "reference window",
@@ -270,6 +370,32 @@ def drift_frame(analysis: MonitoringAnalysis) -> pd.DataFrame:
                 "value": _round(analysis.subgroup_sensitivity_gap),
                 "level": "max gap",
             },
+        ]
+    )
+
+
+def site_calibration_frame(analysis: MonitoringAnalysis) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "site": item.site,
+                "baseline_n": item.baseline_n,
+                "current_n": item.current_n,
+                "baseline_brier": _round(item.baseline_brier),
+                "current_brier": _round(item.current_brier),
+                "brier_delta": _round(item.brier_delta),
+                "baseline_ece": _round(item.baseline_ece),
+                "current_ece": _round(item.current_ece),
+                "ece_delta": _round(item.ece_delta),
+                "baseline_intercept": _round(item.baseline_intercept),
+                "current_intercept": _round(item.current_intercept),
+                "intercept_delta": _round(item.intercept_delta),
+                "baseline_slope": _round(item.baseline_slope),
+                "current_slope": _round(item.current_slope),
+                "slope_delta": _round(item.slope_delta),
+                "status": item.status,
+            }
+            for item in analysis.site_calibration_drift
         ]
     )
 
@@ -331,12 +457,20 @@ def analysis_summary_dict(analysis: MonitoringAnalysis) -> dict[str, Any]:
         "auprc": _round(analysis.metrics.pr.area.estimate),
         "sensitivity": _round(analysis.metrics.binary.sensitivity.estimate),
         "specificity": _round(analysis.metrics.binary.specificity.estimate),
+        "calibration_intercept": _round(analysis.metrics.calibration.calibration_intercept),
+        "calibration_slope": _round(analysis.metrics.calibration.calibration_slope),
         "psi": _round(analysis.drift.psi_value),
         "psi_level": analysis.drift.psi_level,
+        "score_wasserstein": _round(analysis.drift.wasserstein_value),
+        "score_ks_statistic": _round(analysis.drift.ks_statistic),
+        "score_ks_p_value": _round(analysis.drift.ks_p_value),
         "alerts": len(analysis.alerts.alerts),
         "critical_alerts": analysis.alerts.n_critical,
         "warning_alerts": analysis.alerts.n_warning,
         "model_versions": sorted(analysis.dataframe[COL_MODEL_VERSION].dropna().unique().tolist()),
+        "monitoring_plan": analysis.monitoring_plan.to_dict()
+        if analysis.monitoring_plan is not None
+        else None,
     }
 
 
@@ -370,6 +504,13 @@ def _metric_row(name: str, value: float, ci: Any | None) -> dict[str, Any]:
         "ci_lower": _round(ci.lower) if ci is not None else None,
         "ci_upper": _round(ci.upper) if ci is not None else None,
     }
+
+
+def _subgroup_status(metrics: BinaryMetrics) -> str:
+    value = metrics.sensitivity.estimate
+    if isinstance(value, float) and math.isnan(value):
+        return "insufficient_data"
+    return "ok"
 
 
 def _round(value: float | int | None) -> float | None:

@@ -26,6 +26,7 @@ from ..analysis import (
     missing_data_frame,
     rolling_auroc_frame,
     run_monitoring_analysis,
+    site_calibration_frame,
     stratified_metrics_frame,
     summary_metrics_frame,
     version_comparison_frame,
@@ -72,8 +73,12 @@ def generate_monitoring_report(
     basename: str = "rad_ai_sentinel_report",
     include_pdf: bool = True,
     n_resamples: int = 200,
+    audit_log: str | Path | None = None,
+    audit_actor: str = "rad-ai-sentinel",
 ) -> ReportArtifacts:
     """Render a complete monitoring report."""
+    from ..audit import append_audit_event, build_artifact_event
+
     analysis = (
         data
         if isinstance(data, MonitoringAnalysis)
@@ -104,6 +109,21 @@ def generate_monitoring_report(
                     f"WeasyPrint error:\n{exc}\n\nfpdf2 fallback error:\n{exc2}\n",
                     encoding="utf-8",
                 )
+
+    if audit_log:
+        append_audit_event(
+            audit_log,
+            build_artifact_event(
+                event_type="report_generated",
+                actor=audit_actor,
+                artifact=html_path,
+                details={
+                    "pdf": str(pdf_path) if pdf_path else None,
+                    "alerts": len(analysis.alerts.alerts),
+                    "critical_alerts": analysis.alerts.n_critical,
+                },
+            ),
+        )
 
     return ReportArtifacts(html=html_path, pdf=pdf_path, pdf_error=error_path)
 
@@ -157,7 +177,9 @@ def _register_fonts(pdf: object) -> str:
     return "Helvetica"  # built-in latin-1 fallback
 
 
-def _write_pdf_fpdf2(analysis: MonitoringAnalysis, pdf_path: Path, font_family: str = "Helvetica") -> None:
+def _write_pdf_fpdf2(
+    analysis: MonitoringAnalysis, pdf_path: Path, font_family: str = "Helvetica"
+) -> None:
     """Generate a styled PDF using fpdf2 as a cross-platform fallback."""
     from fpdf import FPDF
 
@@ -204,6 +226,10 @@ def _write_pdf_fpdf2(analysis: MonitoringAnalysis, pdf_path: Path, font_family: 
     # --- Temporal Drift ---
     _pdf_section(pdf, "Temporal Drift", 1, font_family)
     _pdf_table(pdf, drift_frame(analysis), font_family)
+
+    # --- Site Calibration Drift ---
+    _pdf_section(pdf, "Site-Level Calibration Drift", 1, font_family)
+    _pdf_table(pdf, site_calibration_frame(analysis), font_family)
 
     # --- Subgroup / Scanner / Site ---
     pdf.add_page()
@@ -285,7 +311,11 @@ def _pdf_kpi_boxes(pdf: object, summary: dict, font_family: str = "Helvetica") -
     y = pdf.get_y()
 
     metrics = [
-        ("Alerts", str(summary["alerts"]), f"{summary['critical_alerts']} crit, {summary['warning_alerts']} warn"),
+        (
+            "Alerts",
+            str(summary["alerts"]),
+            f"{summary['critical_alerts']} crit, {summary['warning_alerts']} warn",
+        ),
         ("AUROC", f"{summary['auroc']:.3f}", "overall discrimination"),
         ("PSI", f"{summary['psi']:.3f}", f"{summary['psi_level']} drift"),
         ("Sensitivity", f"{summary['sensitivity']:.3f}", "current threshold"),
@@ -365,7 +395,9 @@ def _pdf_table(pdf: object, df: pd.DataFrame, font_family: str = "Helvetica") ->
             pdf.set_font(font_family, "B", 8)
             pdf.set_fill_color(*_hex_to_rgb(PANEL))
             for col_name in cols:
-                pdf.cell(col_w, row_h, col_name[:24], border=1, fill=True, new_x="RIGHT", new_y="TOP")
+                pdf.cell(
+                    col_w, row_h, col_name[:24], border=1, fill=True, new_x="RIGHT", new_y="TOP"
+                )
             pdf.ln(row_h)
             pdf.set_font(font_family, "", 8)
 
@@ -467,6 +499,10 @@ def render_report_html(analysis: MonitoringAnalysis) -> str:
         warning_alerts=analysis.alerts.n_warning,
         summary_table=_to_html(summary_metrics_frame(analysis)),
         drift_table=_to_html(drift_frame(analysis)),
+        site_calibration_table=_to_html(
+            site_calibration_frame(analysis),
+            empty="No site-level calibration drift rows.",
+        ),
         alerts_table=_to_html(alerts_frame(analysis), empty="No stop-rule alerts fired."),
         stratified_table=_to_html(stratified_metrics_frame(analysis)),
         missing_table=_to_html(missing_data_frame(analysis)),

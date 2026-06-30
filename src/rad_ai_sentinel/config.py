@@ -58,6 +58,7 @@ ALL_STRATIFIER_COLUMNS: tuple[str, ...] = DEMOGRAPHIC_COLUMNS + OPERATIONAL_COLU
 DEFAULT_CONFIDENCE_LEVEL: float = 0.95
 DEFAULT_BOOTSTRAP_N: int = 1000  # keep modest for snappy CLI/dashboard use
 DEFAULT_RANDOM_SEED: int = 42
+DEFAULT_SUBGROUP_MIN_N: int = 10
 
 # Calibration reliability-diagram bins.
 DEFAULT_CALIBRATION_BINS: int = 10

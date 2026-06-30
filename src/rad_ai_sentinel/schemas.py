@@ -12,6 +12,8 @@ shifted between minor versions; the explicit schema form has not).
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 import pandas as pd
 import pandera.pandas as pa
 
@@ -28,6 +30,20 @@ from .config import (
     COL_Y_PRED_BINARY,
     COL_Y_PRED_PROBA,
     COL_Y_TRUE,
+)
+
+
+class SchemaProfile(StrEnum):
+    """Validation strictness for different monitoring contexts."""
+
+    PUBLIC = "public"
+    PRODUCTION = "production"
+
+
+PRODUCTION_REQUIRED_METADATA: tuple[str, ...] = (
+    COL_SITE,
+    COL_SCANNER_MANUFACTURER,
+    COL_MODALITY,
 )
 
 # Helper for non-empty string columns.
@@ -106,7 +122,11 @@ COLUMN_DESCRIPTIONS: dict[str, str] = {
 }
 
 
-def validate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def validate_dataframe(
+    df: pd.DataFrame,
+    *,
+    profile: str | SchemaProfile = SchemaProfile.PUBLIC,
+) -> pd.DataFrame:
     """Validate a raw dataframe against the input contract.
 
     Parameters
@@ -114,6 +134,10 @@ def validate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df:
         Raw dataframe as read from CSV (dates may still be strings; the schema
         coerces them via ``coerce=True``).
+    profile:
+        ``"public"`` keeps optional metadata optional for public benchmark
+        adapters. ``"production"`` additionally requires operational metadata
+        needed for local monitoring.
 
     Returns
     -------
@@ -126,4 +150,36 @@ def validate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         Collected list of all contract violations (missing required columns,
         bad types, out-of-range values, etc.).
     """
-    return SCHEMA.validate(df, lazy=True)
+    validated = SCHEMA.validate(df, lazy=True)
+    _validate_profile_requirements(validated, SchemaProfile(profile))
+    return validated
+
+
+def _validate_profile_requirements(df: pd.DataFrame, profile: SchemaProfile) -> None:
+    if profile == SchemaProfile.PUBLIC:
+        return
+    if profile != SchemaProfile.PRODUCTION:
+        raise ValueError(f"Unknown schema profile: {profile}")
+
+    missing = [col for col in PRODUCTION_REQUIRED_METADATA if col not in df.columns]
+    empty = [
+        col
+        for col in PRODUCTION_REQUIRED_METADATA
+        if col in df.columns and _is_effectively_empty(df[col])
+    ]
+    if missing or empty:
+        problems = []
+        if missing:
+            problems.append(f"missing columns: {', '.join(missing)}")
+        if empty:
+            problems.append(f"empty columns: {', '.join(empty)}")
+        joined = "; ".join(problems)
+        raise ValueError(f"Production schema profile requires operational metadata ({joined})")
+
+
+def _is_effectively_empty(series: pd.Series) -> bool:
+    non_null = series.dropna()
+    if non_null.empty:
+        return True
+    as_text = non_null.astype(str).str.strip()
+    return bool(as_text.eq("").all())

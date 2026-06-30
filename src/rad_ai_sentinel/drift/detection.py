@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from scipy.stats import entropy
+from scipy.stats import entropy, ks_2samp, wasserstein_distance
 
 from ..config import (
     COL_STUDY_DATE,
@@ -250,6 +250,12 @@ class DriftResult:
         'none', 'minor', or 'major'.
     kl_value:
         KL divergence between reference and current.
+    wasserstein_value:
+        First Wasserstein distance between reference and current score distributions.
+    ks_statistic:
+        Kolmogorov-Smirnov two-sample statistic for reference/current scores.
+    ks_p_value:
+        Kolmogorov-Smirnov two-sample p-value.
     rolling:
         Rolling AUROC over time.
     cusum:
@@ -259,6 +265,9 @@ class DriftResult:
     psi_value: float
     psi_level: str
     kl_value: float
+    wasserstein_value: float
+    ks_statistic: float
+    ks_p_value: float
     rolling: RollingAUCResult
     cusum: CUSUMResult
 
@@ -306,6 +315,15 @@ def compute_drift(
 
     psi_val = psi(ref_scores, cur_scores, n_bins=n_bins)
     kl_val = kl_divergence(ref_scores, cur_scores, n_bins=n_bins)
+    if len(ref_scores) and len(cur_scores):
+        wasserstein_val = float(wasserstein_distance(ref_scores, cur_scores))
+        ks_result = ks_2samp(ref_scores, cur_scores)
+        ks_statistic = float(ks_result.statistic)
+        ks_p_value = float(ks_result.pvalue)
+    else:
+        wasserstein_val = float("nan")
+        ks_statistic = float("nan")
+        ks_p_value = float("nan")
 
     if psi_val >= psi_major:
         psi_level = "major"
@@ -332,6 +350,9 @@ def compute_drift(
         psi_value=psi_val,
         psi_level=psi_level,
         kl_value=kl_val,
+        wasserstein_value=wasserstein_val,
+        ks_statistic=ks_statistic,
+        ks_p_value=ks_p_value,
         rolling=rolling,
         cusum=cusum_res,
     )

@@ -127,6 +127,9 @@ class TestComputeDrift:
         # The drift_df has a planted shift; PSI should exceed the 'none' threshold.
         assert result.psi_value > 0.05
         assert result.psi_level in ("none", "minor", "major")
+        assert result.wasserstein_value > 0
+        assert np.isfinite(result.ks_statistic)
+        assert np.isfinite(result.ks_p_value)
 
 
 # ---------------------------------------------------------------------------

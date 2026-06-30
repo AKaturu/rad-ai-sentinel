@@ -12,7 +12,13 @@ Build `rad-ai-sentinel`, a runnable Python package for post-deployment radiology
 - Stratify performance by site, scanner manufacturer, modality, age group, sex, and race/ethnicity.
 - Analyze missing metadata and flag missingness associated with outcome labels.
 - Detect temporal drift using score-distribution PSI, KL divergence, rolling AUROC, and CUSUM.
+- Report Wasserstein/KS score-distribution drift, calibration slope/intercept, and site-level calibration drift.
+- Suppress unstable subgroup estimates below configurable sample-size floors.
 - Evaluate configurable stop-rule thresholds.
+- Load configurable monitoring plans, model inventories, and alert-review metadata.
+- Write checksum-backed audit events for generated report and analysis artifacts when requested.
+- Provide schema profiles for public benchmark adaptation and production monitoring.
+- Provide de-identified adapter examples for PACS/RIS/AI orchestration prediction exports.
 - Compare model versions, including paired DeLong AUROC testing when the same cases have scores from two versions.
 - Provide a CLI, Streamlit dashboard, downloadable HTML report, optional PDF report, synthetic demo data, Dockerfile, and GitHub Actions workflow.
 - Provide a path to use public sample radiology data for smoke testing without claiming the public labels are deployed AI results.
@@ -30,6 +36,7 @@ Build `rad-ai-sentinel`, a runnable Python package for post-deployment radiology
 - `rad-ai-sentinel demo` generates a synthetic CSV, metrics tables, and an HTML report.
 - `rad-ai-sentinel compute --csv <file>` writes machine-readable outputs.
 - `rad-ai-sentinel report --csv <file>` writes a downloadable report.
+- Governance templates, connector templates, and production schema-profile validation are available from the CLI.
 - `rad-ai-sentinel serve` launches the dashboard.
 - README includes screenshots, a demo-video link, quick-start commands, and sample-data guidance.
 - `STATUS.md` is current at handoff.

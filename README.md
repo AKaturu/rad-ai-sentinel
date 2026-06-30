@@ -32,8 +32,11 @@ This software is a research prototype and is not intended for independent clinic
 - Calibration analysis (Brier score, expected calibration error, reliability curves)
 - Subgroup performance by age group, sex, race/ethnicity, site, scanner, modality
 - Missing-data analysis and outcome-associated missingness flags
-- Temporal drift detection (PSI, KL divergence, rolling AUROC, CUSUM)
+- Temporal drift detection (PSI, KL divergence, Wasserstein/KS score drift, rolling AUROC, CUSUM)
+- Calibration slope/intercept and site-level calibration drift
 - Configurable stop-rule alerts and model-version comparison (DeLong test)
+- Monitoring-plan JSON, model inventory templates, alert review metadata, and audit-log events
+- Public versus production schema profiles and de-identified PACS/RIS/AI orchestration export templates
 - Machine-readable CSV, JSON, HTML, and optional PDF exports
 - Streamlit dashboard, CLI, synthetic data generator, RSNA public-data adapter
 
@@ -47,6 +50,11 @@ rad-ai-sentinel demo
 
 # Analyze your own monitoring CSV:
 rad-ai-sentinel compute --csv path/to/predictions.csv --output outputs/analysis
+
+# Create governance and connector templates:
+rad-ai-sentinel monitoring-plan-template monitoring_plan.json
+rad-ai-sentinel inventory-template model_inventory.csv
+rad-ai-sentinel connector-templates connector_examples
 
 # Launch the dashboard:
 rad-ai-sentinel serve
