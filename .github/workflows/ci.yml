@@ -31,5 +31,11 @@ jobs:
       - name: Lint
         run: python -m ruff check .
 
+      - name: Type check
+        run: python -m mypy src
+
       - name: Test
         run: python -m pytest
+
+      - name: Dashboard accessibility and responsive-layout guardrails
+        run: python scripts/check_dashboard_accessibility.py

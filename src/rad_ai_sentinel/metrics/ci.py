@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import numpy as np
 
@@ -89,8 +89,8 @@ def proportion_ci(successes: int, n: int, confidence: float = DEFAULT_CONFIDENCE
 
 
 def bootstrap_ci(
-    samples: np.ndarray,
-    statistic: Callable[..., float],
+    samples: np.ndarray[Any, Any],
+    statistic: Callable[[np.ndarray[Any, Any]], float],
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
     n_resamples: int = DEFAULT_BOOTSTRAP_N,
     seed: int = DEFAULT_RANDOM_SEED,
@@ -120,48 +120,48 @@ def bootstrap_ci(
         paired 2-D inputs across versions; we implement manual resampling with
         the bias-corrected percentile adjustment for stability.)
     """
-    samples = np.asarray(samples)
+    sample_array: np.ndarray[Any, Any] = np.asarray(samples)
     rng = np.random.default_rng(seed)
 
-    point = float(statistic(samples))
+    point = float(statistic(sample_array))
 
-    n = samples.shape[0]
-    if n < 2 or np.all(samples == samples[0]):
+    n = sample_array.shape[0]
+    if n < 2 or np.all(sample_array == sample_array[0]):
         return CI(estimate=point, lower=point, upper=point)
 
     # Manual row-wise bootstrap resampling (keeps paired rows together).
     indices = rng.integers(0, n, size=(n_resamples, n))
     replicates = np.empty(n_resamples, dtype=float)
     for i in range(n_resamples):
-        resampled = samples[indices[i]]
+        resampled: np.ndarray[Any, Any] = sample_array[indices[i]]
         replicates[i] = float(statistic(resampled))
 
-    replicates = np.sort(replicates)
+    sorted_replicates = np.sort(replicates)
 
     # BCa bias correction.
     # z0 = Phi^{-1}(proportion of replicates < point estimate)
-    prop_below = np.mean(replicates < point)
+    prop_below = float(np.mean(sorted_replicates < point))
     if prop_below == 0.0:
         prop_below = 1.0 / (2 * n_resamples)
     elif prop_below == 1.0:
         prop_below = 1.0 - 1.0 / (2 * n_resamples)
     from scipy.stats import norm
 
-    z0 = norm.ppf(prop_below)
+    z0 = float(norm.ppf(prop_below))
 
     # Acceleration: estimated via jackknife (for the point estimate).
     jackknife_estimates = np.empty(n, dtype=float)
     for i in range(n):
-        left = samples[:i]
-        right = samples[i + 1 :]
-        jack_idx = np.concatenate([left, right])
+        left = sample_array[:i]
+        right = sample_array[i + 1 :]
+        jack_idx: np.ndarray[Any, Any] = np.concatenate([left, right])
         jackknife_estimates[i] = float(statistic(jack_idx))
 
-    jack_mean = jackknife_estimates.mean()
+    jack_mean = float(jackknife_estimates.mean())
     # a = (sum((jack_mean - jack_i)^3)) / (6 * (sum((jack_mean - jack_i)^2))^1.5)
     diffs = jack_mean - jackknife_estimates
-    a_num = np.sum(diffs**3)
-    a_den = 6.0 * (np.sum(diffs**2) ** 1.5)
+    a_num = float(np.sum(diffs**3))
+    a_den = float(6.0 * (np.sum(diffs**2) ** 1.5))
     a = a_num / a_den if a_den != 0 else 0.0
 
     # BCa quantiles.
@@ -172,10 +172,10 @@ def bootstrap_ci(
         z_bc = z0 + (z0 + z_alpha) / (1.0 - a * (z0 + z_alpha))
         return float(norm.cdf(z_bc))
 
-    alpha1 = np.clip(_bca_percentile(z_alpha_lo), 1e-10, 1.0 - 1e-10)
-    alpha2 = np.clip(_bca_percentile(z_alpha_hi), 1e-10, 1.0 - 1e-10)
+    alpha1 = float(np.clip(_bca_percentile(z_alpha_lo), 1e-10, 1.0 - 1e-10))
+    alpha2 = float(np.clip(_bca_percentile(z_alpha_hi), 1e-10, 1.0 - 1e-10))
 
-    lower = float(np.percentile(replicates, alpha1 * 100))
-    upper = float(np.percentile(replicates, alpha2 * 100))
+    lower = float(np.percentile(sorted_replicates, alpha1 * 100))
+    upper = float(np.percentile(sorted_replicates, alpha2 * 100))
 
     return CI(estimate=point, lower=lower, upper=upper)

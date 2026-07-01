@@ -30,6 +30,7 @@ The workflow in `.github/workflows/native-release.yml` runs on:
 - tags that match `v*`
 
 For a public release, create a tag such as `v0.1.0`, let the workflow produce the artifacts, then attach the artifacts to a GitHub Release.
+Tagged runs attach the platform archives and SHA-256 checksum files to the GitHub Release automatically.
 
 ## Notes
 

@@ -12,6 +12,8 @@ shifted between minor versions; the explicit schema form has not).
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 import pandas as pd
 import pandera.pandas as pa
 
@@ -26,8 +28,23 @@ from .config import (
     COL_SITE,
     COL_STUDY_DATE,
     COL_Y_PRED_BINARY,
+    COL_Y_PRED_LABEL,
     COL_Y_PRED_PROBA,
     COL_Y_TRUE,
+)
+
+
+class SchemaProfile(StrEnum):
+    """Validation strictness for different monitoring contexts."""
+
+    PUBLIC = "public"
+    PRODUCTION = "production"
+
+
+PRODUCTION_REQUIRED_METADATA: tuple[str, ...] = (
+    COL_SITE,
+    COL_SCANNER_MANUFACTURER,
+    COL_MODALITY,
 )
 
 # Helper for non-empty string columns.
@@ -85,8 +102,39 @@ def _build_schema() -> pa.DataFrameSchema:
     )
 
 
+def _build_multiclass_schema() -> pa.DataFrameSchema:
+    """Construct the validated contract for label-based multi-class monitoring."""
+    return pa.DataFrameSchema(
+        {
+            # --- required columns ---
+            COL_PATIENT_ID: pa.Column(
+                str, checks=_nonempty, nullable=False, required=True, coerce=True
+            ),
+            COL_STUDY_DATE: pa.Column("datetime64[ns]", nullable=False, required=True, coerce=True),
+            COL_MODEL_VERSION: pa.Column(
+                str, checks=_nonempty, nullable=False, required=True, coerce=True
+            ),
+            COL_Y_TRUE: pa.Column(str, checks=_nonempty, nullable=False, required=True, coerce=True),
+            COL_Y_PRED_LABEL: pa.Column(
+                str, checks=_nonempty, nullable=False, required=True, coerce=True
+            ),
+            # --- optional metadata columns ---
+            COL_SITE: pa.Column(str, nullable=True, required=False, coerce=True),
+            COL_SCANNER_MANUFACTURER: pa.Column(str, nullable=True, required=False, coerce=True),
+            COL_MODALITY: pa.Column(str, nullable=True, required=False, coerce=True),
+            COL_AGE_GROUP: pa.Column(str, nullable=True, required=False, coerce=True),
+            COL_SEX: pa.Column(str, nullable=True, required=False, coerce=True),
+            COL_RACE_ETHNICITY: pa.Column(str, nullable=True, required=False, coerce=True),
+        },
+        coerce=True,
+        strict=False,
+        add_missing_columns=False,
+    )
+
+
 # Build once at import time; the schema is immutable and reusable.
 SCHEMA: pa.DataFrameSchema = _build_schema()
+MULTICLASS_SCHEMA: pa.DataFrameSchema = _build_multiclass_schema()
 
 
 # Column name -> human description, for error messages and docs.
@@ -97,6 +145,7 @@ COLUMN_DESCRIPTIONS: dict[str, str] = {
     COL_Y_TRUE: "ground-truth label, must be 0 or 1",
     COL_Y_PRED_PROBA: "model probability for class 1, must be in [0, 1]",
     COL_Y_PRED_BINARY: "thresholded model prediction, must be 0 or 1",
+    COL_Y_PRED_LABEL: "predicted class label for multi-class monitoring",
     COL_SITE: "reading site / facility name",
     COL_SCANNER_MANUFACTURER: "scanner manufacturer, e.g. GE, Siemens, Philips",
     COL_MODALITY: "imaging modality, e.g. CR, DX, CT, MR",
@@ -106,7 +155,11 @@ COLUMN_DESCRIPTIONS: dict[str, str] = {
 }
 
 
-def validate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def validate_dataframe(
+    df: pd.DataFrame,
+    *,
+    profile: str | SchemaProfile = SchemaProfile.PUBLIC,
+) -> pd.DataFrame:
     """Validate a raw dataframe against the input contract.
 
     Parameters
@@ -114,6 +167,10 @@ def validate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df:
         Raw dataframe as read from CSV (dates may still be strings; the schema
         coerces them via ``coerce=True``).
+    profile:
+        ``"public"`` keeps optional metadata optional for public benchmark
+        adapters. ``"production"`` additionally requires operational metadata
+        needed for local monitoring.
 
     Returns
     -------
@@ -126,4 +183,60 @@ def validate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         Collected list of all contract violations (missing required columns,
         bad types, out-of-range values, etc.).
     """
-    return SCHEMA.validate(df, lazy=True)
+    validated = SCHEMA.validate(df, lazy=True)
+    _validate_profile_requirements(validated, SchemaProfile(profile))
+    return validated
+
+
+def validate_multiclass_dataframe(
+    df: pd.DataFrame,
+    *,
+    profile: str | SchemaProfile = SchemaProfile.PUBLIC,
+) -> pd.DataFrame:
+    """Validate a raw dataframe against the multi-class monitoring contract.
+
+    The multi-class mode intentionally uses a separate schema from binary
+    monitoring. It requires class labels, not a thresholded 0/1 prediction, so
+    binary stop-rule logic cannot be applied by accident.
+    """
+    validated = MULTICLASS_SCHEMA.validate(df, lazy=True)
+    _validate_profile_requirements(validated, SchemaProfile(profile))
+    _validate_multiclass_label_space(validated)
+    return validated
+
+
+def _validate_profile_requirements(df: pd.DataFrame, profile: SchemaProfile) -> None:
+    if profile == SchemaProfile.PUBLIC:
+        return
+    if profile != SchemaProfile.PRODUCTION:
+        raise ValueError(f"Unknown schema profile: {profile}")
+
+    missing = [col for col in PRODUCTION_REQUIRED_METADATA if col not in df.columns]
+    empty = [
+        col
+        for col in PRODUCTION_REQUIRED_METADATA
+        if col in df.columns and _is_effectively_empty(df[col])
+    ]
+    if missing or empty:
+        problems = []
+        if missing:
+            problems.append(f"missing columns: {', '.join(missing)}")
+        if empty:
+            problems.append(f"empty columns: {', '.join(empty)}")
+        joined = "; ".join(problems)
+        raise ValueError(f"Production schema profile requires operational metadata ({joined})")
+
+
+def _is_effectively_empty(series: pd.Series) -> bool:
+    non_null = series.dropna()
+    if non_null.empty:
+        return True
+    as_text = non_null.astype(str).str.strip()
+    return bool(as_text.eq("").all())
+
+
+def _validate_multiclass_label_space(df: pd.DataFrame) -> None:
+    labels = pd.concat([df[COL_Y_TRUE], df[COL_Y_PRED_LABEL]], ignore_index=True)
+    unique_labels = labels.dropna().astype(str).str.strip().unique()
+    if len(unique_labels) < 2:
+        raise ValueError("Multi-class monitoring requires at least two distinct class labels")

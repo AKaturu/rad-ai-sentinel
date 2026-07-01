@@ -1,0 +1,5 @@
+patient_id,study_date,model_version,y_true,y_pred_proba,y_pred_binary
+p1,2026-01-01,v1,1,0.9,1
+p2,2026-01-02,v1,0,0.1,0
+p3,2026-01-03,v1,1,0.8,1
+p4,2026-01-04,v1,0,0.2,0

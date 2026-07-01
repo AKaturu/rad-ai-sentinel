@@ -14,7 +14,7 @@ from rad_ai_sentinel.metrics.binary import (
     compute_binary_metrics,
     confusion_counts,
 )
-from rad_ai_sentinel.metrics.calibration import compute_calibration
+from rad_ai_sentinel.metrics.calibration import compute_calibration, compute_site_calibration_drift
 from rad_ai_sentinel.metrics.ci import CI, bootstrap_ci, proportion_ci, wilson_ci
 from rad_ai_sentinel.metrics.delong import delong_test
 from rad_ai_sentinel.metrics.stratified import (
@@ -217,6 +217,42 @@ class TestCalibration:
             warnings.simplefilter("ignore")
             cal = compute_calibration(y_true, y_score)
         assert cal.brier.lower < cal.brier.estimate < cal.brier.upper
+
+    def test_calibration_slope_intercept_are_reported(self) -> None:
+        rng = np.random.default_rng(42)
+        y_true = rng.integers(0, 2, size=300).astype(float)
+        y_score = np.clip(0.25 + 0.50 * y_true + rng.normal(0, 0.12, 300), 0.001, 0.999)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cal = compute_calibration(y_true, y_score, n_resamples=60)
+        assert np.isfinite(cal.calibration_intercept)
+        assert np.isfinite(cal.calibration_slope)
+        assert cal.calibration_slope > 0
+
+    def test_site_calibration_drift_rows(self) -> None:
+        rng = np.random.default_rng(42)
+        rows = []
+        for i in range(160):
+            y_true = int(rng.random() < 0.35)
+            site = "A" if i % 2 == 0 else "B"
+            score_shift = 0.15 if i >= 80 and site == "B" else 0.0
+            y_score = np.clip(
+                0.20 + 0.55 * y_true + score_shift + rng.normal(0, 0.10), 0.001, 0.999
+            )
+            rows.append(
+                {
+                    "study_date": pd.Timestamp("2026-01-01") + pd.Timedelta(days=i),
+                    "site": site,
+                    "y_true": y_true,
+                    "y_pred_proba": y_score,
+                }
+            )
+        result = compute_site_calibration_drift(
+            pd.DataFrame(rows), reference_fraction=0.5, min_n=30
+        )
+        assert {row.site for row in result} == {"A", "B"}
+        assert all(row.status == "ok" for row in result)
+        assert any(np.isfinite(row.ece_delta) for row in result)
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Governance artifacts: monitoring-plan templates, model inventory import/export, alert-review metadata, and audit-log events.
+- Production/public schema profiles and de-identified connector templates for PACS/RIS/AI orchestration exports.
+- Calibration slope/intercept, site-level calibration drift, Wasserstein/KS score-drift summaries, and configurable subgroup sample-size floors.
+- Regression fixtures for malformed CSVs, missing subgroup fields, and small-sample subgroup suppression.
+- Tagged desktop artifact publication to GitHub Releases, dashboard guardrail checks, and an initial versioned docs scaffold.
+- Label-based multi-class monitoring with `compute-multiclass`, per-class one-vs-rest metrics, confusion matrices, and CSV/JSON outputs.
+- Mypy type-checking cleanup, a CI type-check gate, and a NumPy upper bound that keeps Python 3.11 type analysis stable.
+
 ## 0.1.0 - 2026-06-28
 
 ### Added

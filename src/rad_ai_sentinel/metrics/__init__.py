@@ -9,6 +9,7 @@ Sub-modules are also importable individually for targeted analysis:
   - ``curves``: AUROC, AUPRC (BCa bootstrap CIs), ROC/PR curve data
   - ``calibration``: Brier score, ECE, reliability diagram data
   - ``stratified``: per-subgroup metrics (site, scanner, modality, demographics)
+  - ``multiclass``: label-based multi-class summary, per-class, and confusion metrics
   - ``ci``: Wilson CI, BCa bootstrap CI primitives
   - ``delong``: DeLong test for pairwise AUROC comparison
 """
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import numpy as np
 import pandas as pd
 
 from ..config import (
@@ -25,10 +27,12 @@ from ..config import (
     COL_Y_PRED_PROBA,
     COL_Y_TRUE,
     DEFAULT_CONFIDENCE_LEVEL,
+    DEFAULT_SUBGROUP_MIN_N,
 )
 from .binary import BinaryMetrics, compute_binary_metrics
 from .calibration import CalibrationMetrics, compute_calibration
 from .curves import CurveResult, compute_pr, compute_roc
+from .multiclass import MulticlassMetrics, compute_multiclass_metrics
 from .stratified import StratifiedResult, stratify_all
 
 
@@ -59,6 +63,7 @@ def compute_all_metrics(
     *,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
     stratifiers: list[str] | None = None,
+    min_subgroup_n: int = DEFAULT_SUBGROUP_MIN_N,
     n_resamples: int = 300,
 ) -> FullMetricsResult:
     """Run the full metric suite on a validated dataframe.
@@ -71,6 +76,8 @@ def compute_all_metrics(
         Confidence level for all CIs.
     stratifiers:
         Stratifier columns to analyse; defaults to all available stratifiers.
+    min_subgroup_n:
+        Minimum subgroup sample size required before point estimates are shown.
     n_resamples:
         Bootstrap resamples for AUROC, AUPRC, and Brier confidence intervals.
 
@@ -78,11 +85,11 @@ def compute_all_metrics(
     -------
     FullMetricsResult
     """
-    y_true = df[COL_Y_TRUE].values
-    y_pred = df[COL_Y_PRED_BINARY].values
-    y_proba = df[COL_Y_PRED_PROBA].values
+    y_true = df[COL_Y_TRUE].to_numpy(dtype=int)
+    y_pred = df[COL_Y_PRED_BINARY].to_numpy(dtype=int)
+    y_proba = df[COL_Y_PRED_PROBA].to_numpy(dtype=float)
     n = len(df)
-    n_positive = int(y_true.sum())
+    n_positive = int(np.sum(y_true))
     prevalence = n_positive / n if n > 0 else 0.0
 
     # Overall metrics.
@@ -92,7 +99,12 @@ def compute_all_metrics(
     calibration = compute_calibration(y_true, y_proba, n_bins=10, n_resamples=n_resamples)
 
     # Stratified metrics (only for columns present in df).
-    stratified = stratify_all(df, stratifiers=stratifiers, confidence=confidence)
+    stratified = stratify_all(
+        df,
+        stratifiers=stratifiers,
+        confidence=confidence,
+        min_n=min_subgroup_n,
+    )
 
     # Per-version summary (if model_version column is present).
     versions: dict[str, BinaryMetrics] = {}
@@ -100,8 +112,8 @@ def compute_all_metrics(
         for version, vdf in df.groupby(COL_MODEL_VERSION, dropna=True):
             if len(vdf) >= 10:
                 versions[str(version)] = compute_binary_metrics(
-                    vdf[COL_Y_TRUE].values,
-                    vdf[COL_Y_PRED_BINARY].values,
+                    vdf[COL_Y_TRUE].to_numpy(dtype=int),
+                    vdf[COL_Y_PRED_BINARY].to_numpy(dtype=int),
                     confidence=confidence,
                 )
 
@@ -123,6 +135,8 @@ __all__ = [
     "CalibrationMetrics",
     "CurveResult",
     "FullMetricsResult",
+    "MulticlassMetrics",
     "StratifiedResult",
     "compute_all_metrics",
+    "compute_multiclass_metrics",
 ]

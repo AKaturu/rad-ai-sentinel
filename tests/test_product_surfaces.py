@@ -42,6 +42,7 @@ def test_analysis_outputs_are_written() -> None:
     outputs = write_analysis_outputs(analysis, output_dir)
     assert outputs["summary"].exists()
     assert outputs["stratified"].exists()
+    assert outputs["site_calibration"].exists()
     payload = json.loads(outputs["json"].read_text(encoding="utf-8"))
     assert payload["n"] == len(df)
     assert payload["model_versions"] == ["v1.0", "v2.0"]
@@ -70,6 +71,7 @@ def test_monitoring_export_payloads_share_one_analysis() -> None:
         "missing_csv",
         "alerts_csv",
         "drift_csv",
+        "site_calibration_csv",
         "versions_csv",
         "metrics_json",
         "report_html",

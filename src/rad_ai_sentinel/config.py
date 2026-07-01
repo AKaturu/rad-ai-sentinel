@@ -18,6 +18,7 @@ COL_MODEL_VERSION = "model_version"
 COL_Y_TRUE = "y_true"
 COL_Y_PRED_PROBA = "y_pred_proba"
 COL_Y_PRED_BINARY = "y_pred_binary"
+COL_Y_PRED_LABEL = "y_pred_label"
 
 # Optional metadata columns used for stratification. May be missing/empty.
 COL_SITE = "site"
@@ -34,6 +35,14 @@ REQUIRED_COLUMNS: tuple[str, ...] = (
     COL_Y_TRUE,
     COL_Y_PRED_PROBA,
     COL_Y_PRED_BINARY,
+)
+
+MULTICLASS_REQUIRED_COLUMNS: tuple[str, ...] = (
+    COL_PATIENT_ID,
+    COL_STUDY_DATE,
+    COL_MODEL_VERSION,
+    COL_Y_TRUE,
+    COL_Y_PRED_LABEL,
 )
 
 OPTIONAL_COLUMNS: tuple[str, ...] = (
@@ -58,6 +67,7 @@ ALL_STRATIFIER_COLUMNS: tuple[str, ...] = DEMOGRAPHIC_COLUMNS + OPERATIONAL_COLU
 DEFAULT_CONFIDENCE_LEVEL: float = 0.95
 DEFAULT_BOOTSTRAP_N: int = 1000  # keep modest for snappy CLI/dashboard use
 DEFAULT_RANDOM_SEED: int = 42
+DEFAULT_SUBGROUP_MIN_N: int = 10
 
 # Calibration reliability-diagram bins.
 DEFAULT_CALIBRATION_BINS: int = 10

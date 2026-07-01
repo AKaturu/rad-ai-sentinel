@@ -15,6 +15,7 @@ import pandas as pd
 
 from ..config import (
     COL_MODEL_VERSION,
+    COL_PATIENT_ID,
     COL_Y_PRED_BINARY,
     COL_Y_PRED_PROBA,
     COL_Y_TRUE,
@@ -64,27 +65,42 @@ def compare_versions(
     df_b = df[df[COL_MODEL_VERSION] == version_b]
 
     metrics_a = compute_binary_metrics(
-        df_a[COL_Y_TRUE].values, df_a[COL_Y_PRED_BINARY].values, confidence=confidence
+        df_a[COL_Y_TRUE].to_numpy(dtype=int),
+        df_a[COL_Y_PRED_BINARY].to_numpy(dtype=int),
+        confidence=confidence,
     )
     metrics_b = compute_binary_metrics(
-        df_b[COL_Y_TRUE].values, df_b[COL_Y_PRED_BINARY].values, confidence=confidence
+        df_b[COL_Y_TRUE].to_numpy(dtype=int),
+        df_b[COL_Y_PRED_BINARY].to_numpy(dtype=int),
+        confidence=confidence,
     )
 
     # Check if there are overlapping patient_ids (common test set).
     delong_result = None
-    common_patients = set(df_a["patient_id"].values) & set(df_b["patient_id"].values)
+    common_patients = set(df_a[COL_PATIENT_ID].astype(str).to_numpy()) & set(
+        df_b[COL_PATIENT_ID].astype(str).to_numpy()
+    )
     if len(common_patients) >= 20:
         # Build a paired dataset using the common patients.
-        common_df_a = df_a[df_a["patient_id"].isin(common_patients)].set_index("patient_id")
-        common_df_b = df_b[df_b["patient_id"].isin(common_patients)].set_index("patient_id")
+        common_df_a = df_a[df_a[COL_PATIENT_ID].astype(str).isin(common_patients)].assign(
+            **{COL_PATIENT_ID: lambda frame: frame[COL_PATIENT_ID].astype(str)}
+        )
+        common_df_b = df_b[df_b[COL_PATIENT_ID].astype(str).isin(common_patients)].assign(
+            **{COL_PATIENT_ID: lambda frame: frame[COL_PATIENT_ID].astype(str)}
+        )
         # Inner join on patient_id.
-        paired = common_df_a.join(common_df_b, lsuffix="_a", rsuffix="_b", how="inner")
+        paired = common_df_a.set_index(COL_PATIENT_ID).join(
+            common_df_b.set_index(COL_PATIENT_ID),
+            lsuffix="_a",
+            rsuffix="_b",
+            how="inner",
+        )
         if len(paired) >= 20:
-            y_true = paired[COL_Y_TRUE + "_a"].values  # should be same as _b
-            score_a = paired[COL_Y_PRED_PROBA + "_a"].values
-            score_b = paired[COL_Y_PRED_PROBA + "_b"].values
+            y_true = paired[COL_Y_TRUE + "_a"].to_numpy(dtype=int)  # should be same as _b
+            score_a = paired[COL_Y_PRED_PROBA + "_a"].to_numpy(dtype=float)
+            score_b = paired[COL_Y_PRED_PROBA + "_b"].to_numpy(dtype=float)
             # Only use if labels agree.
-            labels_b = paired[COL_Y_TRUE + "_b"].values
+            labels_b = paired[COL_Y_TRUE + "_b"].to_numpy(dtype=int)
             if np.array_equal(y_true, labels_b):
                 import warnings
 

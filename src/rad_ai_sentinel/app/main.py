@@ -13,6 +13,7 @@ from rad_ai_sentinel.analysis import (
     drift_frame,
     missing_data_frame,
     run_monitoring_analysis,
+    site_calibration_frame,
     stratified_metrics_frame,
     summary_metrics_frame,
     version_comparison_frame,
@@ -130,6 +131,7 @@ with drift:
         st.dataframe(drift_frame(analysis), width="stretch", hide_index=True)
     with right:
         st.plotly_chart(rolling_auroc_figure(analysis), width="stretch")
+    st.dataframe(site_calibration_frame(analysis), width="stretch", hide_index=True)
 
 with missing:
     st.dataframe(missing_data_frame(analysis), width="stretch", hide_index=True)
@@ -148,6 +150,7 @@ with report:
         ("Download Missing CSV", "missing_csv"),
         ("Download Alerts CSV", "alerts_csv"),
         ("Download Drift CSV", "drift_csv"),
+        ("Download Site Calibration CSV", "site_calibration_csv"),
         ("Download Versions CSV", "versions_csv"),
     ]
     for start in range(0, len(buttons), 3):

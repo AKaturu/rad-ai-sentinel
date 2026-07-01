@@ -1,0 +1,3 @@
+patient_id,study_date,model_version,y_true,y_pred_proba,y_pred_binary,site,scanner_manufacturer,modality
+p1,2026-01-01,v1,1,1.2,1,Site A,GE,DX
+p2,2026-01-02,v1,0,0.1,0,Site A,GE,DX
