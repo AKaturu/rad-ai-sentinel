@@ -37,6 +37,7 @@ from .multiclass_analysis import (
     run_multiclass_monitoring_analysis,
     write_multiclass_analysis_outputs,
 )
+from .protocol import load_study_protocol, write_study_protocol_template
 from .report import generate_monitoring_report
 
 app = typer.Typer(
@@ -343,6 +344,31 @@ def inventory_validate_command(
     console.print(f"[green]Loaded model inventory:[/green] {len(items)} model(s)")
     for item in items:
         console.print(f"  {item.model_id} {item.version}: {item.status}")
+
+
+@app.command("study-protocol-template")
+def study_protocol_template_command(
+    output: Annotated[Path, typer.Argument(help="Destination study protocol JSON.")],
+    force: Annotated[bool, typer.Option("--force", help="Overwrite existing file.")] = False,
+) -> None:
+    """Write an editable prospective validation protocol template."""
+    try:
+        path = write_study_protocol_template(output, force=force)
+    except FileExistsError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"[green]Wrote study protocol template:[/green] {path}")
+
+
+@app.command("study-protocol-validate")
+def study_protocol_validate_command(
+    protocol: Annotated[Path, typer.Argument(help="Study protocol JSON to validate.")],
+) -> None:
+    """Validate and summarize a prospective study protocol."""
+    loaded = load_study_protocol(protocol)
+    console.print(f"[green]Loaded study protocol:[/green] {loaded.study_id}")
+    console.print(f"  Primary endpoint: {loaded.primary_endpoint}")
+    console.print(f"  Minimum cases: {loaded.minimum_cases}")
+    console.print(f"  Drift methods: {', '.join(loaded.drift_methods)}")
 
 
 def _print_summary_table(df: pd.DataFrame) -> None:

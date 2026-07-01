@@ -20,6 +20,11 @@ from rad_ai_sentinel.governance import (
     write_model_inventory_template,
     write_monitoring_plan_template,
 )
+from rad_ai_sentinel.protocol import (
+    StudyProtocol,
+    load_study_protocol,
+    write_study_protocol_template,
+)
 from rad_ai_sentinel.schemas import validate_dataframe
 
 
@@ -145,3 +150,43 @@ def test_inventory_json_loads(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert load_model_inventory(path)[0].model_id == "m1"
+
+
+def test_study_protocol_template_loads(tmp_path: Path) -> None:
+    path = write_study_protocol_template(tmp_path / "study_protocol.json")
+    protocol = load_study_protocol(path)
+    assert protocol.study_id == "rad-ai-sentinel-rsna-case-study-v1"
+    assert protocol.minimum_cases >= 1000
+    assert "rolling_auroc" in protocol.drift_methods
+
+
+def test_study_protocol_rejects_missing_required_fields() -> None:
+    try:
+        StudyProtocol(
+            study_id="",
+            title="Missing ID",
+            data_source="RSNA",
+            prediction_source="frozen predictions",
+            primary_endpoint="AUROC",
+            minimum_cases=100,
+        )
+    except ValueError as exc:
+        assert "study_id" in str(exc)
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("StudyProtocol accepted a missing study_id")
+
+
+def test_study_protocol_rejects_invalid_case_count() -> None:
+    try:
+        StudyProtocol(
+            study_id="s1",
+            title="Invalid case count",
+            data_source="RSNA",
+            prediction_source="frozen predictions",
+            primary_endpoint="AUROC",
+            minimum_cases=0,
+        )
+    except ValueError as exc:
+        assert "minimum_cases" in str(exc)
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("StudyProtocol accepted zero minimum_cases")

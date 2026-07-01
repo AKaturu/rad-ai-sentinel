@@ -59,6 +59,8 @@ rad-ai-sentinel compute-multiclass --csv path/to/multiclass_predictions.csv --ou
 rad-ai-sentinel monitoring-plan-template monitoring_plan.json
 rad-ai-sentinel inventory-template model_inventory.csv
 rad-ai-sentinel connector-templates connector_examples
+rad-ai-sentinel study-protocol-template study_protocol.json
+rad-ai-sentinel study-protocol-validate study_protocol.json
 
 # Launch the dashboard:
 rad-ai-sentinel serve
@@ -107,6 +109,7 @@ Both modes accept optional `site`, `scanner_manufacturer`, `modality`, `age_grou
 | Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Data sources (RSNA, MIMIC-CXR, NIH, CheXpert) | [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) |
 | Desktop releases | [docs/DESKTOP_RELEASES.md](docs/DESKTOP_RELEASES.md) |
+| Study protocol workflow | [docs/STUDY_PROTOCOL.md](docs/STUDY_PROTOCOL.md) |
 | Roadmap | [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Research notes | [docs/RESEARCH.md](docs/RESEARCH.md) |
 | CSV format reference | [README.md](README.md) (Input CSV Format section) |
